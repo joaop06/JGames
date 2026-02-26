@@ -4,12 +4,28 @@ import { useAuth } from '../context/AuthContext'
 import { Button, Card, Input } from '../components/ui'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { login, user } = useAuth()
+  const [submitting, setSubmitting] = useState(false)
+  const { login, user, loading } = useAuth()
   const navigate = useNavigate()
+
+  if (loading) {
+    return (
+      <div
+        className="auth-page"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <p style={{ color: 'var(--text-muted)' }}>Verificando sessão...</p>
+      </div>
+    )
+  }
 
   if (user) {
     navigate('/', { replace: true })
@@ -19,25 +35,25 @@ export default function Login() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setSubmitting(true)
     try {
-      await login(email, password)
+      await login(identifier, password)
       navigate('/', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   return (
     <div
+      className="auth-page"
       style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'var(--space-5)',
       }}
     >
       <Card
@@ -70,12 +86,12 @@ export default function Login() {
             </p>
           )}
           <Input
-            label="E-mail"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            label="E-mail ou nome de usuário"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             required
-            autoComplete="email"
+            autoComplete="username"
           />
           <Input
             label="Senha"
@@ -89,7 +105,8 @@ export default function Login() {
             type="submit"
             variant="primary"
             size="md"
-            loading={loading}
+            loading={submitting}
+            className="auth-submit"
             style={{ width: '100%' }}
           >
             {loading ? 'Entrando...' : 'Entrar'}

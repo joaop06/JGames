@@ -21,17 +21,18 @@ async function userRoutes(fastify: FastifyInstance) {
     if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
     const { username } = request.body ?? {};
     if (username !== undefined) {
-      const trimmed = typeof username === "string" ? username.trim() : "";
-      if (trimmed.length < 2 || trimmed.length > 32 || !/^[a-zA-Z0-9_]+$/.test(trimmed)) {
+      const normalized =
+        typeof username === "string" ? username.trim().toLowerCase() : "";
+      if (normalized.length < 2 || normalized.length > 32 || !/^[a-z0-9_]+$/.test(normalized)) {
         return reply.status(400).send({ error: "Invalid username" });
       }
-      const existing = await prisma.user.findUnique({ where: { username: trimmed } });
+      const existing = await prisma.user.findUnique({ where: { username: normalized } });
       if (existing && existing.id !== request.userId) {
         return reply.status(409).send({ error: "Username already in use" });
       }
       await prisma.user.update({
         where: { id: request.userId },
-        data: { username: trimmed },
+        data: { username: normalized },
       });
     }
     const user = await prisma.user.findUnique({

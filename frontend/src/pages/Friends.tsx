@@ -147,16 +147,8 @@ export default function Friends() {
       </h1>
 
       <PageSection title="Convidar por nome de usuário">
-        <form
-          onSubmit={handleSendInvite}
-          style={{
-            display: 'flex',
-            gap: 'var(--space-2)',
-            alignItems: 'flex-end',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 180 }}>
+        <form onSubmit={handleSendInvite} className="form-invite-row">
+          <div className="form-invite-field">
             <Input
               label="Nome de usuário"
               type="text"
@@ -170,6 +162,7 @@ export default function Friends() {
             variant="primary"
             size="md"
             loading={loadingInvite}
+            className="form-invite-btn"
           >
             Enviar convite
           </Button>

@@ -66,7 +66,7 @@ export default function TicTacToeLobby() {
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--size-lg)', marginBottom: 'var(--space-3)' }}>
           Nova partida
         </h2>
-        <Button onClick={handleCreateQuick} disabled={creating}>
+        <Button className="lobby-btn" onClick={handleCreateQuick} disabled={creating}>
           {creating ? 'Criando...' : 'Partida rápida'}
         </Button>
       </section>
@@ -87,7 +87,7 @@ export default function TicTacToeLobby() {
                   {m.playerX.username} vs {m.playerO?.username ?? '...'}
                 </span>
                 <span style={{ color: 'var(--text-muted)', fontSize: 'var(--size-sm)' }}>{m.status}</span>
-                <Button size="sm" onClick={() => navigate(`/games/tic-tac-toe/match/${m.id}`)}>
+                <Button size="sm" className="lobby-btn" onClick={() => navigate(`/games/tic-tac-toe/match/${m.id}`)}>
                   Entrar
                 </Button>
               </Card>
@@ -109,7 +109,7 @@ export default function TicTacToeLobby() {
             {waitingMatches.map((m) => (
               <Card key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>{m.playerX.username} está esperando</span>
-                <Button size="sm" onClick={() => handleJoin(m.id)}>
+                <Button size="sm" className="lobby-btn" onClick={() => handleJoin(m.id)}>
                   Entrar
                 </Button>
               </Card>

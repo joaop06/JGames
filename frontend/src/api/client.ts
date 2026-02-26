@@ -33,10 +33,10 @@ export type UserResponse = {
 }
 
 export const api = {
-  async login(email: string, password: string): Promise<UserResponse> {
+  async login(identifier: string, password: string): Promise<UserResponse> {
     const data = await request<{ user: UserResponse }>('/api/auth/login', {
       method: 'POST',
-      json: { email, password },
+      json: { login: identifier, password },
     })
     return data!.user
   },

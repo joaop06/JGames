@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Toast from '../Toast'
@@ -16,10 +17,15 @@ const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleLogout() {
     await logout()
     navigate('/login', { replace: true })
+  }
+
+  function closeDrawer() {
+    setMenuOpen(false)
   }
 
   return (
@@ -27,11 +33,11 @@ export default function AppLayout() {
       <RealtimeToastsHandler />
       <Toast />
       <header
+        className="layout-header"
         style={{
           background: 'var(--bg-card)',
-          borderBottom: '1px solid var(--border)',
-          padding: 'var(--space-3) var(--space-5)',
-          boxShadow: 'var(--shadow-card)',
+          borderBottom: '1px solid var(--accent)',
+          boxShadow: 'var(--shadow-card), 0 4px 0 0 rgba(0, 212, 255, 0.15)',
         }}
       >
         <nav
@@ -49,13 +55,13 @@ export default function AppLayout() {
             to="/"
             style={({ isActive }) => ({
               ...navLinkStyle({ isActive }),
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--size-lg)',
+              display: 'flex',
+              alignItems: 'center',
             })}
           >
-            Arcade
+            <img src="/logo.png" alt="JGames" className="header-logo-img" />
           </NavLink>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          <div className="desktop-nav-links" style={{ alignItems: 'center', gap: 'var(--space-4)' }}>
             <NavLink to="/" style={navLinkStyle}>
               Início
             </NavLink>
@@ -101,15 +107,79 @@ export default function AppLayout() {
               </>
             )}
           </div>
+          {user && (
+            <div className="mobile-header-actions">
+              <NotificationPanel />
+              <button
+                type="button"
+                className="mobile-menu-btn"
+                onClick={() => setMenuOpen(true)}
+                aria-label="Abrir menu"
+              >
+                &#9776;
+              </button>
+            </div>
+          )}
         </nav>
       </header>
+
+      <div
+        className={`drawer-backdrop ${menuOpen ? 'is-open' : ''}`}
+        onClick={closeDrawer}
+        aria-hidden
+      />
+      <aside className={`drawer ${menuOpen ? 'is-open' : ''}`} aria-label="Menu de navegação">
+        <button type="button" className="drawer-close" onClick={closeDrawer} aria-label="Fechar menu">
+          &#215;
+        </button>
+        <NavLink to="/" className="drawer-nav-link" onClick={closeDrawer}>
+          Início
+        </NavLink>
+        <NavLink to="/profile" className="drawer-nav-link" onClick={closeDrawer}>
+          Perfil
+        </NavLink>
+        <NavLink to="/friends" className="drawer-nav-link" onClick={closeDrawer}>
+          Amigos
+        </NavLink>
+        <NavLink to="/games/tic-tac-toe" className="drawer-nav-link" onClick={closeDrawer}>
+          Jogo da Velha
+        </NavLink>
+        {user && (
+          <>
+            <span style={{ color: 'var(--text-muted)', fontSize: 'var(--size-sm)', padding: 'var(--space-3)' }}>
+              {user.username}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                closeDrawer()
+                handleLogout()
+              }}
+              style={{
+                padding: 'var(--space-3)',
+                minHeight: 44,
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+                fontSize: 'var(--size-base)',
+                marginTop: 'auto',
+              }}
+            >
+              Sair
+            </button>
+          </>
+        )}
+      </aside>
+
       <main
+        className="layout-main"
         style={{
           flex: 1,
           maxWidth: 960,
           margin: '0 auto',
           width: '100%',
-          padding: 'var(--space-6) var(--space-5)',
         }}
       >
         <Outlet />

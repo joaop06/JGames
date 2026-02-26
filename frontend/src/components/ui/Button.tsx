@@ -11,9 +11,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<Variant, React.CSSProperties> = {
   primary: {
-    background: '#3d5a80',
+    background: 'var(--gradient-accent)',
     color: '#fff',
     border: 0,
+    boxShadow: '0 0 16px var(--glow)',
   },
   success: {
     background: 'var(--success)',
@@ -50,7 +51,7 @@ export default function Button({
     font: 'inherit',
     borderRadius: 'var(--radius-md)',
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
-    transition: 'opacity var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast)',
+    transition: 'opacity var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast)',
     opacity: disabled || loading ? 0.7 : 1,
     ...variantStyles[variant],
     ...sizeStyles[size],

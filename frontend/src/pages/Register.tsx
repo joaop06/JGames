@@ -8,9 +8,25 @@ export default function Register() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { register, user } = useAuth()
+  const [submitting, setSubmitting] = useState(false)
+  const { register, user, loading } = useAuth()
   const navigate = useNavigate()
+
+  if (loading) {
+    return (
+      <div
+        className="auth-page"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <p style={{ color: 'var(--text-muted)' }}>Verificando sessão...</p>
+      </div>
+    )
+  }
 
   if (user) {
     navigate('/', { replace: true })
@@ -20,25 +36,29 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setSubmitting(true)
     try {
-      await register(email, username, password)
+      await register(
+        email.trim().toLowerCase(),
+        username.trim().toLowerCase(),
+        password.trim()
+      )
       navigate('/', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao cadastrar')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   return (
     <div
+      className="auth-page"
       style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'var(--space-5)',
       }}
     >
       <Card
@@ -82,7 +102,7 @@ export default function Register() {
             label="Nome de usuário"
             type="text"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => setUsername(e.target.value.trim().toLowerCase())}
             required
             minLength={2}
             maxLength={32}
@@ -101,10 +121,11 @@ export default function Register() {
             type="submit"
             variant="primary"
             size="md"
-            loading={loading}
+            loading={submitting}
+            className="auth-submit"
             style={{ width: '100%' }}
           >
-            {loading ? 'Cadastrando...' : 'Cadastrar'}
+            {submitting ? 'Cadastrando...' : 'Cadastrar'}
           </Button>
         </form>
         <p style={{ marginTop: 'var(--space-4)', color: 'var(--text-muted)' }}>

@@ -1,19 +1,26 @@
-/* Design tokens - plataforma arcade */
+/* Design tokens - JGames (neon / retro-futurista) */
 :root {
   /* Cores */
-  --bg-page: #1a1a2e;
-  --bg-card: #252540;
-  --bg-elevated: #2d2d4a;
+  --bg-page: #0d0d14;
+  --bg-card: #1a1a28;
+  --bg-elevated: #252538;
   --text-primary: #eee;
   --text-muted: #999;
-  --accent: #7c9cbf;
-  --accent-hover: #9bb8e0;
+  --accent: #00d4ff;
+  --accent-hover: #5ce1e6;
+  --accent-purple: #8a2be2;
+  --accent-pink: #e040fb;
   --success: #2d6a4f;
   --success-hover: #40916c;
   --danger: #6a2d2d;
   --danger-hover: #9d4b4b;
-  --border: #3d3d5c;
-  --glow: rgba(124, 156, 191, 0.4);
+  --border: #2d2d44;
+  --glow: rgba(0, 212, 255, 0.5);
+  --glow-purple: rgba(138, 43, 226, 0.35);
+
+  /* Gradientes */
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+  --gradient-hero: linear-gradient(180deg, rgba(0, 212, 255, 0.08) 0%, transparent 100%);
 
   /* Tipografia */
   --font-display: 'Orbitron', system-ui, sans-serif;
@@ -35,16 +42,18 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  --space-8: 64px;
 
-  /* Raios */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-card: 12px;
+  /* Raios (bordas arredondadas estilo logo) */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-card: 16px;
 
   /* Sombras */
-  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 20px var(--glow);
+  --shadow-glow-strong: 0 0 24px var(--glow), 0 0 8px var(--glow);
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
 }
@@ -94,4 +103,258 @@ button:not(:disabled):hover {
 
 button:not(:disabled):active {
   opacity: 0.85;
+}
+
+/* --- Layout responsivo (mobile-first) --- */
+.layout-header {
+  padding: var(--space-3) var(--space-4);
+}
+@media (min-width: 768px) {
+  .layout-header {
+    padding: var(--space-3) var(--space-5);
+  }
+}
+
+.layout-main {
+  padding: var(--space-4);
+}
+@media (min-width: 480px) {
+  .layout-main {
+    padding: var(--space-5);
+  }
+}
+@media (min-width: 768px) {
+  .layout-main {
+    padding: var(--space-6) var(--space-5);
+  }
+}
+
+.header-logo-img {
+  height: 64px;
+  width: auto;
+}
+@media (min-width: 768px) {
+  .header-logo-img {
+    height: 88px;
+  }
+}
+
+.desktop-nav-links {
+  display: none;
+}
+@media (min-width: 768px) {
+  .desktop-nav-links {
+    display: flex;
+  }
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+@media (min-width: 768px) {
+  .mobile-header-actions {
+    display: none;
+  }
+}
+
+.mobile-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.mobile-menu-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+@media (min-width: 768px) {
+  .mobile-menu-btn {
+    display: none;
+  }
+}
+
+.drawer-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+.drawer-backdrop.is-open {
+  display: block;
+}
+@media (min-width: 768px) {
+  .drawer-backdrop.is-open {
+    display: none !important;
+  }
+}
+
+.drawer {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  max-width: 85vw;
+  height: 100%;
+  background: var(--bg-card);
+  border-left: 1px solid var(--accent);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4), 0 0 20px var(--glow);
+  z-index: 1000;
+  padding: var(--space-5);
+  overflow-y: auto;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.drawer.is-open {
+  display: flex;
+}
+@media (min-width: 768px) {
+  .drawer.is-open {
+    display: none !important;
+  }
+}
+
+.drawer-close {
+  align-self: flex-end;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+
+.drawer-nav-link {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3);
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  text-decoration: none;
+  color: var(--accent);
+  transition: background var(--transition-fast);
+}
+.drawer-nav-link:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-hover);
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  box-sizing: border-box;
+}
+
+.form-invite-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.form-invite-row .form-invite-field {
+  width: 100%;
+}
+.form-invite-row .form-invite-btn {
+  width: 100%;
+  min-height: 44px;
+}
+@media (min-width: 480px) {
+  .form-invite-row {
+    flex-direction: row;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .form-invite-row .form-invite-field {
+    flex: 1;
+    min-width: 180px;
+    width: auto;
+  }
+  .form-invite-row .form-invite-btn {
+    width: auto;
+    min-height: 44px;
+  }
+}
+
+.layout-main input[type="text"],
+.layout-main input[type="email"],
+.layout-main input[type="password"] {
+  min-height: 44px;
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+
+.auth-page {
+  padding: var(--space-4);
+}
+@media (min-width: 480px) {
+  .auth-page {
+    padding: var(--space-5);
+  }
+}
+
+.auth-page input[type="text"],
+.auth-page input[type="email"],
+.auth-page input[type="password"] {
+  min-height: 44px;
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+.auth-page .auth-submit {
+  min-height: 44px;
+}
+
+.home-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+@media (min-width: 480px) {
+  .home-shortcuts {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+.home-games {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+@media (min-width: 480px) {
+  .home-games {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+.match-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.match-header .match-back-btn {
+  min-height: 44px;
+}
+
+.lobby-btn {
+  min-height: 44px;
 }

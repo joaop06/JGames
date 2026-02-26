@@ -1,13 +1,23 @@
 import { z } from "zod";
 
+const emailNormalized = z.string().trim().toLowerCase().email();
+const usernameNormalized = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2)
+  .max(32)
+  .regex(/^[a-z0-9_]+$/, "Username must be lowercase letters, numbers and underscore only");
+const passwordTrimmed = z.string().trim().min(8).max(128);
+
 export const registerSchema = z.object({
-  email: z.string().email(),
-  username: z.string().min(2).max(32).regex(/^[a-zA-Z0-9_]+$/),
-  password: z.string().min(8).max(128),
+  email: emailNormalized,
+  username: usernameNormalized,
+  password: passwordTrimmed,
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  login: z.string().trim().min(1),
   password: z.string().min(1),
 });
 

@@ -47,10 +47,14 @@ async function authRoutes(fastify: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: "Validation failed", details: parsed.error.flatten() });
     }
-    const { email, password } = parsed.data;
-    const user = await prisma.user.findUnique({ where: { email } });
+    const { login, password } = parsed.data;
+    const loginNorm = login.trim();
+    const isEmail = loginNorm.includes("@");
+    const user = isEmail
+      ? await prisma.user.findUnique({ where: { email: loginNorm.toLowerCase() } })
+      : await prisma.user.findUnique({ where: { username: loginNorm.toLowerCase() } });
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      return reply.status(401).send({ error: "Invalid email or password" });
+      return reply.status(401).send({ error: "E-mail/usuário ou senha inválidos" });
     }
     setAuthCookies(reply, user.id);
     return reply.send({

@@ -98,8 +98,8 @@ export default function TicTacToeMatch() {
 
   return (
     <div>
-      <div style={{ marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/games/tic-tac-toe')}>
+      <div className="match-header">
+        <Button variant="ghost" size="sm" className="match-back-btn" onClick={() => navigate('/games/tic-tac-toe')}>
           ← Lobby
         </Button>
         <h1 style={{ fontFamily: 'var(--font-display)', margin: 0 }}>Jogo da Velha</h1>

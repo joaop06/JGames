@@ -12,7 +12,7 @@ export default function Card({ glow = false, style, children, ...props }: CardPr
         background: 'var(--bg-card)',
         borderRadius: 'var(--radius-card)',
         padding: 'var(--space-5)',
-        boxShadow: glow ? 'var(--shadow-card), 0 0 0 1px var(--accent)' : 'var(--shadow-card)',
+        boxShadow: glow ? 'var(--shadow-card), 0 0 0 1px var(--accent), 0 0 20px var(--glow)' : 'var(--shadow-card)',
         transition: 'box-shadow var(--transition-fast)',
         ...style,
       }}

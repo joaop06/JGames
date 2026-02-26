@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-4)' }}>
-        Plataforma de Jogos
+        JGames
       </h1>
       <p style={{ marginBottom: 'var(--space-6)', fontSize: 'var(--size-lg)' }}>
         Olá, <strong>{user?.username}</strong>. Em breve você poderá jogar jogos multiplayer aqui.
@@ -23,13 +23,7 @@ export default function Home() {
         >
           Atalhos
         </h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: 'var(--space-4)',
-          }}
-        >
+        <div className="home-shortcuts">
           <Link
             to="/profile"
             style={{ textDecoration: 'none', color: 'inherit' }}
@@ -87,13 +81,7 @@ export default function Home() {
         >
           Jogos em destaque
         </h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-            gap: 'var(--space-4)',
-          }}
-        >
+        <div className="home-games">
           <Link to="/games/tic-tac-toe" style={{ textDecoration: 'none', color: 'inherit' }}>
             <Card
               style={{

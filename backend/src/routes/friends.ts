@@ -54,7 +54,8 @@ async function friendRoutes(fastify: FastifyInstance) {
       if (targetUserId) {
         toUserId = targetUserId;
       } else if (username) {
-        const user = await prisma.user.findUnique({ where: { username: username as string } });
+        const normalized = (username as string).trim().toLowerCase();
+        const user = await prisma.user.findUnique({ where: { username: normalized } });
         if (!user) {
           return reply.status(404).send({ error: "User not found" });
         }
