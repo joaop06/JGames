@@ -23,11 +23,11 @@ export const loginSchema = z.object({
 
 export const inviteFriendSchema = z.object({
   username: z.string().min(1).optional(),
-  userId: z.string().cuid().optional(),
+  userId: z.string().uuid().optional(),
 }).refine((data) => data.username ?? data.userId, { message: "Provide username or userId" });
 
 export const createTicTacToeMatchSchema = z.object({
-  opponentUserId: z.string().cuid().optional(),
+  opponentUserId: z.string().uuid().optional(),
 });
 
 export const listMatchesQuerySchema = z.object({

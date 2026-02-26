@@ -181,6 +181,7 @@ async function updateStatsForFinishedMatch(
           wins: addWin,
           losses: addLoss,
           draws: addDraw,
+          updatedAt: new Date(),
         });
         await statsRepo.save(row);
       }
@@ -204,6 +205,7 @@ async function updateStatsForFinishedMatch(
         winsA: addWinsA,
         winsB: addWinsB,
         draws: addDraws,
+        updatedAt: new Date(),
       });
       await recordRepo.save(record);
     }
@@ -232,7 +234,8 @@ export async function registerWebSocket(server: FastifyInstance) {
         return;
       }
 
-      if (data.type === "join_queue") {
+      try {
+        if (data.type === "join_queue") {
         const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
         if (gameType !== TIC_TAC_TOE_GAME_TYPE) {
           send(socket, { type: "error", code: "invalid_payload", message: "Unsupported game type" });
@@ -255,15 +258,15 @@ export async function registerWebSocket(server: FastifyInstance) {
         q.push({ userId, joinedAt: Date.now() });
         await tryMatchTicTacToe();
         return;
-      }
+        }
 
-      if (data.type === "leave_queue") {
+        if (data.type === "leave_queue") {
         const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
         removeFromQueue(gameType, userId);
         return;
-      }
+        }
 
-      if (data.type === "join_match") {
+        if (data.type === "join_match") {
         const matchId = data.matchId;
         if (!matchId || typeof matchId !== "string") {
           send(socket, { type: "error", code: "invalid_payload", message: "matchId required" });
@@ -293,17 +296,17 @@ export async function registerWebSocket(server: FastifyInstance) {
         const state = buildMatchState({ ...match, moves: match.moves ?? [] });
         send(socket, { type: "match_state", ...state });
         return;
-      }
+        }
 
-      if (data.type === "leave_match") {
+        if (data.type === "leave_match") {
         if (currentMatchId) {
           removeConnection(currentMatchId, socket);
           currentMatchId = null;
         }
         return;
-      }
+        }
 
-      if (data.type === "move") {
+        if (data.type === "move") {
         const matchId = data.matchId ?? currentMatchId;
         const position = data.position;
         if (!matchId) {
@@ -384,9 +387,13 @@ export async function registerWebSocket(server: FastifyInstance) {
           broadcastMatch(matchId, { type: "match_state", ...state });
         }
         return;
-      }
+        }
 
-      send(socket, { type: "error", code: "unknown_type", message: "Unknown message type" });
+        send(socket, { type: "error", code: "unknown_type", message: "Unknown message type" });
+      } catch (err) {
+        console.error(err);
+        send(socket, { type: "error", code: "server_error", message: "Algo deu errado. Tenta de novo." });
+      }
     });
 
     socket.on("close", () => {

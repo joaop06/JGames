@@ -15,6 +15,7 @@ export default function FriendsSection() {
   const [invites, setInvites] = useState<Invite[]>([])
   const [inviteUsername, setInviteUsername] = useState('')
   const [error, setError] = useState('')
+  const [challengeError, setChallengeError] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingInvite, setLoadingInvite] = useState(false)
   const [challengingId, setChallengingId] = useState<string | null>(null)
@@ -120,7 +121,7 @@ export default function FriendsSection() {
 
   async function challengeFriend(friendId: string) {
     setChallengingId(friendId)
-    setError('')
+    setChallengeError('')
     try {
       const res = await api.createTicTacToeMatch(friendId)
       if (res.opponentBusy) {
@@ -135,7 +136,7 @@ export default function FriendsSection() {
         navigate(`/games/tic-tac-toe/match/${res.match.id}`)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao desafiar')
+      setChallengeError(err instanceof Error ? err.message : 'Erro ao desafiar')
     } finally {
       setChallengingId(null)
     }
@@ -221,6 +222,11 @@ export default function FriendsSection() {
       </PageSection>
 
       <PageSection title="Lista de amigos">
+        {challengeError && (
+          <p role="alert" style={{ color: 'var(--danger)', marginBottom: 'var(--space-2)', fontSize: 'var(--size-sm)' }}>
+            {challengeError}
+          </p>
+        )}
         {friends.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>
             Você ainda não tem amigos. Envie convites acima.
