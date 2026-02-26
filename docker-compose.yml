@@ -7,8 +7,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-games_platform}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # Port not exposed: only frontend is reachable from the host; db is internal.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-games} -d ${POSTGRES_DB:-games_platform}"]
       interval: 5s
@@ -19,8 +18,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
+    # Port not exposed: frontend proxies /api and /health to backend internally.
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-games}:${POSTGRES_PASSWORD:-games_secret}@db:5432/${POSTGRES_DB:-games_platform}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
