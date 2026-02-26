@@ -20,7 +20,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-games}:${POSTGRES_PASSWORD:-games_secret}@db:5432/${POSTGRES_DB:-games_platform}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
@@ -36,7 +36,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     environment:
       API_URL: http://backend:3000
     volumes:
