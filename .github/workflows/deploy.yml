@@ -6,13 +6,13 @@ on:
       - main
 
 env:
-  APP_DIR: /srv/apps/jgames
+  APP_DIR: /srv/apps/JGames
 
 jobs:
   deploy:
     name: Deploy Production
     if: github.ref == 'refs/heads/main'
-    runs-on: [self-hosted, linux, x64, home-server, jgames]
+    runs-on: [self-hosted, linux, x64, home-server, JGames]
 
     steps:
       - name: Update Repository
