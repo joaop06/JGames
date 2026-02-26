@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sentInvites     FriendInvite[] @relation("SentInvites")
+  receivedInvites FriendInvite[] @relation("ReceivedInvites")
+  friendshipsAsA  Friendship[]   @relation("UserA")
+  friendshipsAsB  Friendship[]   @relation("UserB")
+}
+
+model FriendInvite {
+  id        String   @id @default(cuid())
+  fromUserId String  @map("from_user_id")
+  toUserId   String  @map("to_user_id")
+  status     String  @default("pending") // pending | accepted | rejected
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  fromUser User @relation("SentInvites", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ReceivedInvites", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@map("friend_invites")
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userAId   String   @map("user_a_id")
+  userBId   String   @map("user_b_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userA User @relation("UserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("UserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@map("friendships")
+}

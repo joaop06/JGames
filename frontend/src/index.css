@@ -1,0 +1,97 @@
+/* Design tokens - plataforma arcade */
+:root {
+  /* Cores */
+  --bg-page: #1a1a2e;
+  --bg-card: #252540;
+  --bg-elevated: #2d2d4a;
+  --text-primary: #eee;
+  --text-muted: #999;
+  --accent: #7c9cbf;
+  --accent-hover: #9bb8e0;
+  --success: #2d6a4f;
+  --success-hover: #40916c;
+  --danger: #6a2d2d;
+  --danger-hover: #9d4b4b;
+  --border: #3d3d5c;
+  --glow: rgba(124, 156, 191, 0.4);
+
+  /* Tipografia */
+  --font-display: 'Orbitron', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, sans-serif;
+  --size-xs: 0.75rem;
+  --size-sm: 0.875rem;
+  --size-base: 1rem;
+  --size-lg: 1.25rem;
+  --size-xl: 1.5rem;
+  --size-2xl: 2rem;
+  --weight-normal: 400;
+  --weight-bold: 700;
+
+  /* Espaçamento */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Raios */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-card: 12px;
+
+  /* Sombras */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px var(--glow);
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--size-base);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+input,
+button {
+  font: inherit;
+}
+
+input:focus,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+button:not(:disabled):active {
+  opacity: 0.85;
+}
