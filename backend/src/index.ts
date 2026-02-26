@@ -6,6 +6,7 @@ import websocket from "@fastify/websocket";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import friendRoutes from "./routes/friends.js";
+import notificationRoutes from "./routes/notifications.js";
 import ticTacToeRoutes from "./routes/games/tic-tac-toe.js";
 import { registerWebSocket } from "./ws/handler.js";
 
@@ -25,6 +26,7 @@ await app.register(websocket);
 await app.register(authRoutes);
 await app.register(userRoutes);
 await app.register(friendRoutes);
+await app.register(notificationRoutes);
 await app.register(ticTacToeRoutes);
 await registerWebSocket(app);
 

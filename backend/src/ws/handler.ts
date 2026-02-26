@@ -14,10 +14,35 @@ import { buildMatchState, TIC_TAC_TOE_GAME_TYPE } from "../routes/games/tic-tac-
 
 type Connection = { ws: WebSocket; userId: string };
 const matchConnections = new Map<string, Set<Connection>>();
+const userConnections = new Map<string, Set<WebSocket>>();
 
 function send(ws: WebSocket, payload: object) {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(payload));
+  }
+}
+
+function addUserConnection(userId: string, ws: WebSocket) {
+  let conns = userConnections.get(userId);
+  if (!conns) {
+    conns = new Set();
+    userConnections.set(userId, conns);
+  }
+  conns.add(ws);
+}
+
+function removeUserConnection(userId: string, ws: WebSocket) {
+  const conns = userConnections.get(userId);
+  if (!conns) return;
+  conns.delete(ws);
+  if (conns.size === 0) userConnections.delete(userId);
+}
+
+export function sendToUser(userId: string, payload: object) {
+  const conns = userConnections.get(userId);
+  if (!conns) return;
+  for (const ws of conns) {
+    send(ws, payload);
   }
 }
 
@@ -111,6 +136,7 @@ export async function registerWebSocket(server: FastifyInstance) {
       return;
     }
     const userId = payload.userId;
+    addUserConnection(userId, socket);
     let currentMatchId: string | null = null;
 
     socket.on("message", async (raw: Buffer) => {
@@ -154,6 +180,14 @@ export async function registerWebSocket(server: FastifyInstance) {
         conns.add({ ws: socket, userId });
         const state = buildMatchState(match);
         send(socket, { type: "match_state", ...state });
+        return;
+      }
+
+      if (data.type === "leave_match") {
+        if (currentMatchId) {
+          removeConnection(currentMatchId, socket);
+          currentMatchId = null;
+        }
         return;
       }
 
@@ -240,6 +274,7 @@ export async function registerWebSocket(server: FastifyInstance) {
     });
 
     socket.on("close", () => {
+      removeUserConnection(userId, socket);
       if (currentMatchId) removeConnection(currentMatchId, socket);
     });
   });

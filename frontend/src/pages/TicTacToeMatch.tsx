@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { createTicTacToeWsClient } from '../api/ws'
+import { useRealtime } from '../context/RealtimeContext'
 import type { TicTacToeMatchState } from '../api/client'
 import Board from '../components/tic-tac-toe/Board'
 import Button from '../components/ui/Button'
@@ -22,10 +22,10 @@ export default function TicTacToeMatch() {
   const { matchId } = useParams<{ matchId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { connection, subscribe, isConnected } = useRealtime()
   const [state, setState] = useState<TicTacToeMatchState>(emptyState)
   const [error, setError] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(true)
-  const wsRef = useRef<ReturnType<typeof createTicTacToeWsClient> | null>(null)
 
   const myRole: 'X' | 'O' | null =
     user && state.playerX?.id === user.id ? 'X' : user && state.playerO?.id === user.id ? 'O' : null
@@ -44,35 +44,31 @@ export default function TicTacToeMatch() {
         moves: msg.moves ?? [],
       })
       setError(null)
+      setConnecting(false)
     } else if (msg.type === 'error') {
       setError(msg.message ?? msg.code ?? 'Erro')
+      setConnecting(false)
     }
   }, [])
 
   useEffect(() => {
-    if (!matchId || !user?.id) return
-    const ws = createTicTacToeWsClient()
-    wsRef.current = ws
-    ws
-      .connect(handleMessage)
-      .then(() => {
-        ws.send({ type: 'join_match', matchId })
-        setConnecting(false)
-      })
-      .catch((err) => {
-        setError(err?.message ?? 'Falha ao conectar')
-        setConnecting(false)
-      })
+    if (!matchId) return
+    const unsub = subscribe(handleMessage)
     return () => {
-      ws.disconnect()
-      wsRef.current = null
+      unsub()
+      connection.send({ type: 'leave_match' })
     }
-  }, [matchId, user, handleMessage])
+  }, [matchId, subscribe, handleMessage, connection])
+
+  useEffect(() => {
+    if (matchId && isConnected) {
+      connection.send({ type: 'join_match', matchId })
+    }
+  }, [matchId, isConnected, connection])
 
   const handleCellClick = (position: number) => {
-    const ws = wsRef.current
-    if (!ws?.isConnected() || !matchId) return
-    ws.send({ type: 'move', matchId, position })
+    if (!connection.isConnected() || !matchId) return
+    connection.send({ type: 'move', matchId, position })
   }
 
   const opponentName =

@@ -73,12 +73,36 @@ export const api = {
   async rejectInvite(id: string): Promise<unknown> {
     return request(`/api/friends/invites/${id}/reject`, { method: 'POST' })
   },
+  async removeFriend(friendId: string): Promise<void> {
+    return request(`/api/friends/${friendId}`, { method: 'DELETE' })
+  },
+
+  async getNotifications(): Promise<{
+    notifications: Array<{
+      id: string
+      type: string
+      read: boolean
+      createdAt: string
+      friendInvite: {
+        id: string
+        status: string
+        fromUser: { id: string; username: string }
+      } | null
+    }>
+  }> {
+    return request('/api/notifications')
+  },
+  async markNotificationRead(id: string): Promise<{ ok: boolean }> {
+    return request(`/api/notifications/${id}/read`, { method: 'PATCH' })
+  },
 
   async getWsToken(): Promise<{ token: string }> {
     return request<{ token: string }>('/api/auth/ws-token')
   },
 
-  async createTicTacToeMatch(opponentUserId?: string): Promise<{ match: TicTacToeMatchState }> {
+  async createTicTacToeMatch(
+    opponentUserId?: string
+  ): Promise<{ match: TicTacToeMatchState; opponentBusy?: boolean }> {
     return request('/api/games/tic-tac-toe/matches', {
       method: 'POST',
       json: opponentUserId != null ? { opponentUserId } : {},

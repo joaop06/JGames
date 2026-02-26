@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { useRealtime } from '../context/RealtimeContext'
 import { Button, Card, Input, PageSection } from '../components/ui'
 
 type Friend = { id: string; username: string; createdAt: string }
@@ -8,6 +9,7 @@ type Invite = { id: string; fromUser: { id: string; username: string }; createdA
 
 export default function Friends() {
   const navigate = useNavigate()
+  const { subscribe, showToast } = useRealtime()
   const [friends, setFriends] = useState<Friend[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
   const [inviteUsername, setInviteUsername] = useState('')
@@ -15,6 +17,7 @@ export default function Friends() {
   const [loading, setLoading] = useState(false)
   const [loadingInvite, setLoadingInvite] = useState(false)
   const [challengingId, setChallengingId] = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
   const [vsStats, setVsStats] = useState<Record<string, { wins: number; losses: number; draws: number }>>({})
 
   useEffect(() => {
@@ -36,6 +39,20 @@ export default function Friends() {
     load()
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    return subscribe((msg) => {
+      if (msg.type === 'friend_invite') {
+        api.getInvites().then((res) => setInvites(res.invites)).catch(() => {})
+      }
+      if (msg.type === 'friend_accepted') {
+        api.getFriends().then((res) => setFriends(res.friends)).catch(() => {})
+      }
+      if (msg.type === 'friend_removed') {
+        setFriends((prev) => prev.filter((f) => f.id !== msg.friendId))
+      }
+    })
+  }, [subscribe])
 
   useEffect(() => {
     if (friends.length === 0) return
@@ -87,12 +104,35 @@ export default function Friends() {
     }
   }
 
+  async function handleRemoveFriend(friendId: string) {
+    setRemovingId(friendId)
+    setError('')
+    try {
+      await api.removeFriend(friendId)
+      setFriends((prev) => prev.filter((f) => f.id !== friendId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao remover amigo')
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
   async function challengeFriend(friendId: string) {
     setChallengingId(friendId)
     setError('')
     try {
-      const { match } = await api.createTicTacToeMatch(friendId)
-      navigate(`/games/tic-tac-toe/match/${match.id}`)
+      const res = await api.createTicTacToeMatch(friendId)
+      if (res.opponentBusy) {
+        const friend = friends.find((f) => f.id === friendId)
+        showToast({
+          type: 'game_invite_opponent_busy',
+          username: friend?.username ?? 'Oponente',
+        })
+        return
+      }
+      if (res.match) {
+        navigate(`/games/tic-tac-toe/match/${res.match.id}`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao desafiar')
     } finally {
@@ -214,15 +254,26 @@ export default function Friends() {
                       </span>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    loading={challengingId === f.id}
-                    onClick={() => challengeFriend(f.id)}
-                  >
-                    Desafiar (Jogo da Velha)
-                  </Button>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      loading={challengingId === f.id}
+                      onClick={() => challengeFriend(f.id)}
+                    >
+                      Desafiar (Jogo da Velha)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      loading={removingId === f.id}
+                      onClick={() => handleRemoveFriend(f.id)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
                 </Card>
               </li>
             ))}

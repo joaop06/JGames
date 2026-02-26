@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { RealtimeProvider } from './context/RealtimeContext'
 import AppLayout from './components/layout/AppLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -18,7 +19,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
+    <RealtimeProvider>
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
@@ -37,5 +39,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </RealtimeProvider>
   )
 }

@@ -14,6 +14,23 @@ export type WsMessage =
       moves?: Array<{ position: number; playerId: string }>
     }
   | { type: 'error'; code: string; message: string }
+  | {
+      type: 'friend_invite'
+      inviteId: string
+      fromUser: { id: string; username: string }
+    }
+  | {
+      type: 'friend_accepted'
+      friend: { id: string; username: string }
+    }
+  | { type: 'friend_removed'; friendId: string }
+  | {
+      type: 'game_invite'
+      matchId: string
+      fromUser?: { id: string; username: string }
+      gameType: string
+    }
+  | { type: 'game_invite_opponent_busy'; opponentUsername: string }
 
 function getWsBaseUrl(): string {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'

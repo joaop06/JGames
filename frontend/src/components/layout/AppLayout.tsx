@@ -1,5 +1,8 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import Toast from '../Toast'
+import RealtimeToastsHandler from '../RealtimeToastsHandler'
+import NotificationPanel from '../NotificationPanel'
 
 const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({
   color: isActive ? 'var(--accent-hover)' : 'var(--accent)',
@@ -21,6 +24,8 @@ export default function AppLayout() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <RealtimeToastsHandler />
+      <Toast />
       <header
         style={{
           background: 'var(--bg-card)',
@@ -65,6 +70,7 @@ export default function AppLayout() {
             </NavLink>
             {user && (
               <>
+                <NotificationPanel />
                 <span style={{ color: 'var(--text-muted)', fontSize: 'var(--size-sm)' }}>
                   {user.username}
                 </span>

@@ -1,0 +1,26 @@
+# Override para desenvolvimento: monta código e usa hot reload (tsx watch + Vite HMR).
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# Ou: make dev
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:

@@ -26,6 +26,7 @@ model User {
   gameStats          UserGameStats[]
   friendRecordsAsA   FriendGameRecord[] @relation("UserA")
   friendRecordsAsB   FriendGameRecord[] @relation("UserB")
+  notifications      Notification[]
 }
 
 model FriendInvite {
@@ -37,9 +38,25 @@ model FriendInvite {
 
   fromUser User @relation("SentInvites", fields: [fromUserId], references: [id], onDelete: Cascade)
   toUser   User @relation("ReceivedInvites", fields: [toUserId], references: [id], onDelete: Cascade)
+  notifications Notification[]
 
   @@unique([fromUserId, toUserId])
   @@map("friend_invites")
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  type           String   // e.g. "friend_invite"
+  friendInviteId String?  @map("friend_invite_id")
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  friendInvite FriendInvite? @relation(fields: [friendInviteId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
 }
 
 model Friendship {

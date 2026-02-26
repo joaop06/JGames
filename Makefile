@@ -1,7 +1,7 @@
 # Games Platform - Makefile de desenvolvimento
 # Uso: make <target>
 
-.PHONY: help setup up down build reload logs shell-backend shell-db \
+.PHONY: help setup up down build reload dev dev-down dev-build logs shell-backend shell-db \
 	backend-install backend-dev backend-build backend-db-generate backend-db-migrate backend-db-push \
 	frontend-install frontend-dev frontend-build frontend-preview \
 	clean
@@ -15,6 +15,9 @@ help:
 	@echo "    make down            - Para e remove os containers"
 	@echo "    make build           - Constrói as imagens Docker"
 	@echo "    make reload          - Para, reconstrói imagens e sobe de novo (aplica alterações)"
+	@echo "    make dev             - Sobe em modo DEV com hot reload (volumes montados, sem rebuild)"
+	@echo "    make dev-down        - Para os containers do modo dev"
+	@echo "    make dev-build       - Reconstrói imagens do modo dev (use após mudar deps)"
 	@echo "    make logs            - Mostra logs de todos os serviços"
 	@echo "    make shell-backend   - Abre shell no container do backend"
 	@echo "    make shell-db        - Abre psql no container do banco"
@@ -55,6 +58,19 @@ reload: down
 	docker compose build
 	docker compose up -d
 	@echo "Reload concluído. Containers rodando com as novas alterações."
+
+# --- Docker Dev (hot reload) ---
+DEV_COMPOSE = -f docker-compose.yml -f docker-compose.dev.yml
+
+dev: setup
+	docker compose $(DEV_COMPOSE) up -d --build
+	@echo "Modo dev ativo. Alterações em backend/ e frontend/ recarregam automaticamente."
+
+dev-down:
+	docker compose $(DEV_COMPOSE) down
+
+dev-build:
+	docker compose $(DEV_COMPOSE) build
 
 logs:
 	docker compose logs -f

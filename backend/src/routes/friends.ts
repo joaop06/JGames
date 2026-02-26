@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../lib/db.js";
 import { requireAuth } from "../lib/auth.js";
 import { inviteFriendSchema } from "../lib/validation.js";
+import { sendToUser } from "../ws/handler.js";
 
 async function friendRoutes(fastify: FastifyInstance) {
   fastify.addHook("preHandler", requireAuth);
@@ -92,7 +93,26 @@ async function friendRoutes(fastify: FastifyInstance) {
         update: { status: "pending" },
         include: {
           toUser: { select: { id: true, username: true } },
+          fromUser: { select: { id: true, username: true } },
         },
+      });
+      const existingNotification = await prisma.notification.findFirst({
+        where: { userId: toUserId, friendInviteId: invite.id },
+      });
+      if (!existingNotification) {
+        await prisma.notification.create({
+          data: {
+            userId: toUserId,
+            type: "friend_invite",
+            friendInviteId: invite.id,
+            read: false,
+          },
+        });
+      }
+      sendToUser(toUserId, {
+        type: "friend_invite",
+        inviteId: invite.id,
+        fromUser: invite.fromUser,
       });
       return reply.status(201).send({
         invite: {
@@ -134,6 +154,16 @@ async function friendRoutes(fastify: FastifyInstance) {
         where: { id: invite.fromUserId },
         select: { id: true, username: true },
       });
+      const newFriendForInviter = await prisma.user.findUnique({
+        where: { id: invite.toUserId },
+        select: { id: true, username: true },
+      });
+      if (newFriendForInviter) {
+        sendToUser(invite.fromUserId, {
+          type: "friend_accepted",
+          friend: newFriendForInviter,
+        });
+      }
       return reply.send({ friend });
     }
   );
@@ -156,6 +186,30 @@ async function friendRoutes(fastify: FastifyInstance) {
         data: { status: "rejected" },
       });
       return reply.send({ ok: true });
+    }
+  );
+
+  fastify.delete<{ Params: { friendId: string } }>(
+    "/api/friends/:friendId",
+    async (request: FastifyRequest<{ Params: { friendId: string } }>, reply: FastifyReply) => {
+      if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+      const { friendId } = request.params;
+      if (friendId === request.userId) {
+        return reply.status(400).send({ error: "Cannot remove yourself" });
+      }
+      const [userAId, userBId] = [request.userId, friendId].sort();
+      const friendship = await prisma.friendship.findUnique({
+        where: { userAId_userBId: { userAId, userBId } },
+      });
+      if (!friendship) {
+        return reply.status(404).send({ error: "Friendship not found" });
+      }
+      await prisma.friendship.delete({
+        where: { userAId_userBId: { userAId, userBId } },
+      });
+      sendToUser(request.userId, { type: "friend_removed", friendId });
+      sendToUser(friendId, { type: "friend_removed", friendId: request.userId });
+      return reply.status(204).send();
     }
   );
 }

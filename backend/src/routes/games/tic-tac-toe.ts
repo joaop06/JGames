@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../lib/db.js";
 import { requireAuth } from "../../lib/auth.js";
+import { sendToUser } from "../../ws/handler.js";
 import {
   createTicTacToeMatchSchema,
   listMatchesQuerySchema,
@@ -89,8 +90,25 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         if (!friends) {
           return reply.status(403).send({ error: "Can only challenge friends" });
         }
-        playerOId = opponentUserId;
-        status = "in_progress";
+        const opponentInMatch = await prisma.match.findFirst({
+          where: {
+            gameType: GAME_TYPE,
+            status: { in: ["waiting", "in_progress"] },
+            OR: [{ playerXId: opponentUserId }, { playerOId: opponentUserId }],
+          },
+        });
+        if (opponentInMatch) {
+          const opponent = await prisma.user.findUnique({
+            where: { id: opponentUserId },
+            select: { username: true },
+          });
+          sendToUser(request.userId, {
+            type: "game_invite_opponent_busy",
+            opponentUsername: opponent?.username ?? "Oponente",
+          });
+          return reply.status(200).send({ opponentBusy: true });
+        }
+        status = "waiting";
       }
       const match = await prisma.match.create({
         data: {
@@ -105,6 +123,14 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
           moves: true,
         },
       });
+      if (opponentUserId) {
+        sendToUser(opponentUserId, {
+          type: "game_invite",
+          matchId: match.id,
+          fromUser: match.playerX ? { id: match.playerX.id, username: match.playerX.username } : undefined,
+          gameType: "tic_tac_toe",
+        });
+      }
       const state = buildMatchState({
         ...match,
         playerX: match.playerX,
