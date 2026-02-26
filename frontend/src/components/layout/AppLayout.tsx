@@ -68,11 +68,8 @@ export default function AppLayout() {
             <NavLink to="/profile" style={navLinkStyle}>
               Perfil
             </NavLink>
-            <NavLink to="/friends" style={navLinkStyle}>
-              Amigos
-            </NavLink>
-            <NavLink to="/games/tic-tac-toe" style={navLinkStyle}>
-              Jogo da Velha
+            <NavLink to="/games" style={navLinkStyle}>
+              Jogos
             </NavLink>
             {user && (
               <>
@@ -138,11 +135,8 @@ export default function AppLayout() {
         <NavLink to="/profile" className="drawer-nav-link" onClick={closeDrawer}>
           Perfil
         </NavLink>
-        <NavLink to="/friends" className="drawer-nav-link" onClick={closeDrawer}>
-          Amigos
-        </NavLink>
-        <NavLink to="/games/tic-tac-toe" className="drawer-nav-link" onClick={closeDrawer}>
-          Jogo da Velha
+        <NavLink to="/games" className="drawer-nav-link" onClick={closeDrawer}>
+          Jogos
         </NavLink>
         {user && (
           <>

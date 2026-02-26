@@ -17,12 +17,12 @@ export default function RealtimeToastsHandler() {
   useEffect(() => {
     return subscribe((msg) => {
       const pathname = pathnameRef.current
-      const onFriendsPage = pathname === '/friends'
+      const onProfilePage = pathname === '/profile'
       const inMatch = isInMatchPath(pathname)
 
       if (msg.type === 'friend_invite') {
         const username = msg.fromUser?.username ?? 'Alguém'
-        if (onFriendsPage) return
+        if (onProfilePage) return
         if (inMatch) {
           addUnreadNotification()
           return

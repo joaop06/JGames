@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useRealtime } from '../context/RealtimeContext'
-import { Button, Card, Input, PageSection } from '../components/ui'
+import { Button, Card, Input, PageSection } from './ui'
 
 type Friend = { id: string; username: string; createdAt: string }
 type Invite = { id: string; fromUser: { id: string; username: string }; createdAt: string }
 
-export default function Friends() {
+export default function FriendsSection() {
   const navigate = useNavigate()
   const { subscribe, showToast } = useRealtime()
   const [friends, setFriends] = useState<Friend[]>([])
@@ -141,10 +141,10 @@ export default function Friends() {
   }
 
   return (
-    <div>
-      <h1 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-5)' }}>
+    <section style={{ marginTop: 'var(--space-6)' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--size-lg)', marginBottom: 'var(--space-5)' }}>
         Amigos
-      </h1>
+      </h2>
 
       <PageSection title="Convidar por nome de usuário">
         <form onSubmit={handleSendInvite} className="form-invite-row">
@@ -273,6 +273,6 @@ export default function Friends() {
           </ul>
         )}
       </PageSection>
-    </div>
+    </section>
   )
 }

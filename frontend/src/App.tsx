@@ -6,7 +6,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
 import Profile from './pages/Profile'
-import Friends from './pages/Friends'
+import Games from './pages/Games'
 import TicTacToeLobby from './pages/TicTacToeLobby'
 import TicTacToeMatch from './pages/TicTacToeMatch'
 
@@ -33,7 +33,8 @@ export default function App() {
       >
         <Route index element={<Home />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="friends" element={<Friends />} />
+        <Route path="friends" element={<Navigate to="/profile" replace />} />
+        <Route path="games" element={<Games />} />
         <Route path="games/tic-tac-toe" element={<TicTacToeLobby />} />
         <Route path="games/tic-tac-toe/match/:matchId" element={<TicTacToeMatch />} />
       </Route>

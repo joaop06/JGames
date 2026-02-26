@@ -47,7 +47,7 @@ export default function Home() {
             </Card>
           </Link>
           <Link
-            to="/friends"
+            to="/games"
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
             <Card
@@ -62,57 +62,10 @@ export default function Home() {
                 e.currentTarget.style.boxShadow = 'var(--shadow-card)'
               }}
             >
-              <strong>Amigos</strong>
+              <strong>Jogos</strong>
               <p style={{ margin: 0, marginTop: 'var(--space-2)', color: 'var(--text-muted)', fontSize: 'var(--size-sm)' }}>
-                Gerenciar amigos e convites
+                Ver jogos da plataforma
               </p>
-            </Card>
-          </Link>
-        </div>
-      </section>
-
-      <section>
-        <h2
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--size-lg)',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          Jogos em destaque
-        </h2>
-        <div className="home-games">
-          <Link to="/games/tic-tac-toe" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Card
-              style={{
-                textAlign: 'center',
-                transition: 'box-shadow var(--transition-normal)',
-                height: '100%',
-              }}
-              onMouseOver={(e: React.MouseEvent<HTMLDivElement>) => {
-                e.currentTarget.style.boxShadow = 'var(--shadow-card), 0 0 16px var(--glow)'
-              }}
-              onMouseOut={(e: React.MouseEvent<HTMLDivElement>) => {
-                e.currentTarget.style.boxShadow = 'var(--shadow-card)'
-              }}
-            >
-              <div
-                style={{
-                  aspectRatio: '1',
-                  background: 'var(--bg-elevated)',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: 'var(--space-3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--accent)',
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                }}
-              >
-                ×○
-              </div>
-              <span style={{ fontSize: 'var(--size-sm)' }}>Jogo da Velha</span>
             </Card>
           </Link>
         </div>

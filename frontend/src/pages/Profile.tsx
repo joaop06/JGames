@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/client'
 import { Card } from '../components/ui'
+import FriendsSection from '../components/FriendsSection'
 
 export default function Profile() {
   const { user } = useAuth()
@@ -42,6 +43,8 @@ export default function Profile() {
               Ir para o Jogo da Velha →
             </Link>
           </Card>
+
+          <FriendsSection />
         </>
       )}
     </div>

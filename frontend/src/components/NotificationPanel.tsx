@@ -29,8 +29,28 @@ const BELL_STYLE: React.CSSProperties = {
   borderRadius: 'var(--radius-md)',
   color: 'var(--text-muted)',
   cursor: 'pointer',
-  fontSize: 'var(--size-lg)',
   lineHeight: 1,
+  transition: 'color var(--transition-fast)',
+}
+
+function NotificationIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width={22}
+      height={22}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
 }
 const PANEL_STYLE: React.CSSProperties = {
   position: 'absolute',
@@ -152,8 +172,14 @@ export default function NotificationPanel() {
         aria-label="Notificações"
         style={BELL_STYLE}
         onClick={() => setOpen((o) => !o)}
+        onMouseOver={(e) => {
+          e.currentTarget.style.color = 'var(--accent)'
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.color = 'var(--text-muted)'
+        }}
       >
-        🔔
+        <NotificationIcon />
         {unreadCount > 0 && (
           <span style={BADGE_STYLE}>
             {unreadCount > 99 ? '99+' : unreadCount}
