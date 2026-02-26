@@ -34,9 +34,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "${FRONTEND_PORT:-5173}:${FRONTEND_PORT:-5173}"
     environment:
       API_URL: http://backend:3000
+      FRONTEND_PORT: ${FRONTEND_PORT:-5173}
     volumes:
       - ./frontend:/app
       - /app/node_modules
