@@ -1,0 +1,35 @@
+name: JGames Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  APP_DIR: /srv/apps/jgames
+
+jobs:
+  deploy:
+    name: Deploy Production
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, home-server, jgames]
+
+    steps:
+      - name: Update Repository
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          git fetch origin
+          git checkout ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
+
+      - name: Ensure .env exists
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          if [ ! -f .env ]; then
+            cp .env.example .env
+            echo "::warning:: .env criado a partir de .env.example — configure as variáveis no servidor."
+          fi
+
+      - name: Build and start containers
+        working-directory: ${{ env.APP_DIR }}
+        run: make reload
