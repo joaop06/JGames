@@ -1,5 +1,13 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { prisma } from "../../lib/db.js";
+import { randomUUID } from "crypto";
+import { In } from "typeorm";
+import { getRepository } from "../../lib/db.js";
+import { Match } from "../../entities/Match.js";
+import { Friendship } from "../../entities/Friendship.js";
+import { User } from "../../entities/User.js";
+import { Notification } from "../../entities/Notification.js";
+import { UserGameStats } from "../../entities/UserGameStats.js";
+import { FriendGameRecord } from "../../entities/FriendGameRecord.js";
 import { requireAuth } from "../../lib/auth.js";
 import { sendToUser, broadcastMatch } from "../../ws/handler.js";
 import {
@@ -21,8 +29,8 @@ const GAME_TYPE = TIC_TAC_TOE_GAME_TYPE;
 
 export async function areFriends(userIdA: string, userIdB: string): Promise<boolean> {
   const [idA, idB] = [userIdA, userIdB].sort();
-  const friendship = await prisma.friendship.findUnique({
-    where: { userAId_userBId: { userAId: idA, userBId: idB } },
+  const friendship = await getRepository(Friendship).findOne({
+    where: { userAId: idA, userBId: idB },
   });
   return !!friendship;
 }
@@ -90,15 +98,23 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         if (!friends) {
           return reply.status(403).send({ error: "Can only challenge friends" });
         }
-        const opponentInMatch = await prisma.match.findFirst({
-          where: {
-            gameType: GAME_TYPE,
-            status: { in: ["waiting", "in_progress"] },
-            OR: [{ playerXId: opponentUserId }, { playerOId: opponentUserId }],
-          },
+        const matchRepo = getRepository(Match);
+        const opponentInMatch = await matchRepo.findOne({
+          where: [
+            {
+              gameType: GAME_TYPE,
+              status: In(["waiting", "in_progress"]),
+              playerXId: opponentUserId,
+            },
+            {
+              gameType: GAME_TYPE,
+              status: In(["waiting", "in_progress"]),
+              playerOId: opponentUserId,
+            },
+          ],
         });
         if (opponentInMatch) {
-          const opponent = await prisma.user.findUnique({
+          const opponent = await getRepository(User).findOne({
             where: { id: opponentUserId },
             select: { username: true },
           });
@@ -111,47 +127,44 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         status = "waiting";
       }
       if (!opponentUserId) {
-        await prisma.match.updateMany({
-          where: {
-            gameType: GAME_TYPE,
-            status: "waiting",
-            playerXId: request.userId,
-          },
-          data: { status: "abandoned" },
-        });
+        await getRepository(Match).update(
+          { gameType: GAME_TYPE, status: "waiting", playerXId: request.userId },
+          { status: "abandoned" }
+        );
       }
-      const match = await prisma.match.create({
-        data: {
-          gameType: GAME_TYPE,
-          playerXId: request.userId,
-          playerOId,
-          status,
-        },
-        include: {
-          playerX: { select: { id: true, username: true } },
-          playerO: playerOId ? { select: { id: true, username: true } } : false,
-          moves: true,
-        },
+      const matchRepo = getRepository(Match);
+      const match = matchRepo.create({
+        id: randomUUID(),
+        gameType: GAME_TYPE,
+        playerXId: request.userId,
+        playerOId,
+        status,
       });
+      await matchRepo.save(match);
+      const matchWithRelations = await matchRepo.findOne({
+        where: { id: match.id },
+        relations: { playerX: true, playerO: true, moves: true },
+      })!;
       if (opponentUserId) {
-        await prisma.notification.create({
-          data: {
-            userId: opponentUserId,
-            type: "game_invite",
-            matchId: match.id,
-          } as { userId: string; type: string; matchId: string },
+        const notif = getRepository(Notification).create({
+          id: randomUUID(),
+          userId: opponentUserId,
+          type: "game_invite",
+          matchId: match.id,
         });
+        await getRepository(Notification).save(notif);
         sendToUser(opponentUserId, {
           type: "game_invite",
           matchId: match.id,
-          fromUser: match.playerX ? { id: match.playerX.id, username: match.playerX.username } : undefined,
+          fromUser: matchWithRelations.playerX
+            ? { id: matchWithRelations.playerX.id, username: matchWithRelations.playerX.username }
+            : undefined,
           gameType: "tic_tac_toe",
         });
       }
       const state = buildMatchState({
-        ...match,
-        playerX: match.playerX,
-        playerO: match.playerO ?? null,
+        ...matchWithRelations,
+        moves: matchWithRelations.moves ?? [],
       });
       return reply.status(201).send({ match: state });
     }
@@ -166,25 +179,22 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: "Validation failed", details: parsed.error.flatten() });
       }
       const { status: statusFilter, limit } = parsed.data;
-      const where = {
-        OR: [{ playerXId: request.userId }, { playerOId: request.userId }],
-        ...(statusFilter && { status: statusFilter }),
-      };
-      const matches = await prisma.match.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        include: {
-          playerX: { select: { id: true, username: true } },
-          playerO: { select: { id: true, username: true } },
-        },
-      });
+      const matchRepo = getRepository(Match);
+      const qb = matchRepo
+        .createQueryBuilder("m")
+        .leftJoinAndSelect("m.playerX", "playerX")
+        .leftJoinAndSelect("m.playerO", "playerO")
+        .where("(m.player_x_id = :userId OR m.player_o_id = :userId)", { userId: request.userId })
+        .orderBy("m.created_at", "DESC")
+        .take(limit);
+      if (statusFilter) qb.andWhere("m.status = :status", { status: statusFilter });
+      const matches = await qb.getMany();
       const list = matches.map((m) => ({
         id: m.id,
         status: m.status,
         winnerId: m.winnerId,
-        playerX: m.playerX,
-        playerO: m.playerO,
+        playerX: m.playerX ? { id: m.playerX.id, username: m.playerX.username } : undefined,
+        playerO: m.playerO ? { id: m.playerO.id, username: m.playerO.username } : null,
         createdAt: m.createdAt,
         finishedAt: m.finishedAt,
       }));
@@ -196,18 +206,17 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
     "/api/games/tic-tac-toe/matches/:id",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-      const match = await prisma.match.findUnique({
+      const match = await getRepository(Match).findOne({
         where: { id: request.params.id, gameType: GAME_TYPE },
-        include: {
-          playerX: { select: { id: true, username: true } },
-          playerO: { select: { id: true, username: true } },
-          moves: true,
-        },
+        relations: { playerX: true, playerO: true, moves: true },
       });
       if (!match) return reply.status(404).send({ error: "Match not found" });
       const isPlayer = match.playerXId === request.userId || match.playerOId === request.userId;
       if (!isPlayer) return reply.status(403).send({ error: "Not a player in this match" });
-      const state = buildMatchState(match);
+      const state = buildMatchState({
+        ...match,
+        moves: match.moves ?? [],
+      });
       return reply.send({ match: state });
     }
   );
@@ -216,13 +225,9 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
     "/api/games/tic-tac-toe/matches/:id/join",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-      const match = await prisma.match.findUnique({
+      const match = await getRepository(Match).findOne({
         where: { id: request.params.id, gameType: GAME_TYPE },
-        include: {
-          playerX: { select: { id: true, username: true } },
-          playerO: { select: { id: true, username: true } },
-          moves: true,
-        },
+        relations: { playerX: true, playerO: true, moves: true },
       });
       if (!match) return reply.status(404).send({ error: "Match not found" });
       if (match.status !== "waiting") {
@@ -231,19 +236,16 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
       if (match.playerXId === request.userId) {
         return reply.status(409).send({ error: "You are already in this match" });
       }
-      const updated = await prisma.match.update({
+      await getRepository(Match).update(
+        { id: match.id },
+        { playerOId: request.userId, status: "in_progress" }
+      );
+      const updated = await getRepository(Match).findOne({
         where: { id: match.id },
-        data: { playerOId: request.userId, status: "in_progress" },
-        include: {
-          playerX: { select: { id: true, username: true } },
-          playerO: { select: { id: true, username: true } },
-          moves: true,
-        },
-      });
-      await prisma.notification.deleteMany({
-        where: { matchId: match.id, type: "game_invite" } as { matchId: string; type: string },
-      });
-      const state = buildMatchState(updated);
+        relations: { playerX: true, playerO: true, moves: true },
+      })!;
+      await getRepository(Notification).delete({ matchId: match.id, type: "game_invite" });
+      const state = buildMatchState({ ...updated, moves: updated.moves ?? [] });
       broadcastMatch(match.id, { type: "match_state", ...state });
       return reply.send({ match: state });
     }
@@ -253,8 +255,8 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
     "/api/games/tic-tac-toe/stats",
     async (request: FastifyRequest, reply: FastifyReply) => {
       if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-      const stats = await prisma.userGameStats.findUnique({
-        where: { userId_gameType: { userId: request.userId, gameType: GAME_TYPE } },
+      const stats = await getRepository(UserGameStats).findOne({
+        where: { userId: request.userId!, gameType: GAME_TYPE },
       });
       const result = stats
         ? { wins: stats.wins, losses: stats.losses, draws: stats.draws }
@@ -271,10 +273,8 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
       const friends = await areFriends(request.userId, friendId);
       if (!friends) return reply.status(403).send({ error: "User is not your friend" });
       const [userAId, userBId] = [request.userId, friendId].sort();
-      const record = await prisma.friendGameRecord.findUnique({
-        where: {
-          userAId_userBId_gameType: { userAId, userBId, gameType: GAME_TYPE },
-        },
+      const record = await getRepository(FriendGameRecord).findOne({
+        where: { userAId, userBId, gameType: GAME_TYPE },
       });
       const isA = request.userId === userAId;
       const result = record
@@ -296,18 +296,16 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: "Validation failed", details: parsed.error.flatten() });
       }
       const { limit } = parsed.data;
-      const rows = await prisma.userGameStats.findMany({
+      const rows = await getRepository(UserGameStats).find({
         where: { gameType: GAME_TYPE },
-        orderBy: [{ wins: "desc" }, { losses: "asc" }, { draws: "desc" }],
+        order: { wins: "DESC", losses: "ASC", draws: "DESC" },
         take: limit,
-        include: {
-          user: { select: { id: true, username: true } },
-        },
+        relations: { user: true },
       });
       const leaderboard = rows.map((r, i) => ({
         rank: i + 1,
         userId: r.userId,
-        username: r.user.username,
+        username: r.user?.username ?? "",
         wins: r.wins,
         losses: r.losses,
         draws: r.draws,

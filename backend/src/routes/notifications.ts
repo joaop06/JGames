@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { prisma } from "../lib/db.js";
+import { getRepository } from "../lib/db.js";
+import { Notification } from "../entities/Notification.js";
 import { requireAuth } from "../lib/auth.js";
 
 async function notificationRoutes(fastify: FastifyInstance) {
@@ -7,20 +8,12 @@ async function notificationRoutes(fastify: FastifyInstance) {
 
   fastify.get("/api/notifications", async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-    const notifications = await prisma.notification.findMany({
-      where: { userId: request.userId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        friendInvite: {
-          include: {
-            fromUser: { select: { id: true, username: true } },
-          },
-        },
-        match: {
-          include: {
-            playerX: { select: { id: true, username: true } },
-          },
-        },
+    const notifications = await getRepository(Notification).find({
+      where: { userId: request.userId! },
+      order: { createdAt: "DESC" },
+      relations: {
+        friendInvite: { fromUser: true },
+        match: { playerX: true },
       },
     });
     return reply.send({
@@ -33,7 +26,9 @@ async function notificationRoutes(fastify: FastifyInstance) {
           ? {
               id: n.friendInvite.id,
               status: n.friendInvite.status,
-              fromUser: n.friendInvite.fromUser,
+              fromUser: n.friendInvite.fromUser
+                ? { id: n.friendInvite.fromUser.id, username: n.friendInvite.fromUser.username }
+                : undefined,
             }
           : null,
         gameInvite:
@@ -54,16 +49,13 @@ async function notificationRoutes(fastify: FastifyInstance) {
     "/api/notifications/:id/read",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-      const notification = await prisma.notification.findUnique({
+      const notification = await getRepository(Notification).findOne({
         where: { id: request.params.id },
       });
       if (!notification || notification.userId !== request.userId) {
         return reply.status(404).send({ error: "Notification not found" });
       }
-      await prisma.notification.update({
-        where: { id: request.params.id },
-        data: { read: true },
-      });
+      await getRepository(Notification).update({ id: request.params.id }, { read: true });
       return reply.send({ ok: true });
     }
   );

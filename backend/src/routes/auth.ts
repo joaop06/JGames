@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import bcrypt from "bcrypt";
-import { prisma } from "../lib/db.js";
+import { randomUUID } from "crypto";
+import { getRepository } from "../lib/db.js";
+import { User } from "../entities/User.js";
 import {
   setAuthCookies,
   clearAuthCookies,
@@ -21,8 +23,8 @@ async function authRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: "Validation failed", details: parsed.error.flatten() });
     }
     const { email, username, password } = parsed.data;
-    const existing = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
+    const existing = await getRepository(User).findOne({
+      where: [{ email }, { username }],
     });
     if (existing) {
       return reply.status(409).send({
@@ -30,10 +32,17 @@ async function authRoutes(fastify: FastifyInstance) {
       });
     }
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: { email, username, passwordHash },
-      select: { id: true, email: true, username: true, createdAt: true },
+    const userRepo = getRepository(User);
+    const now = new Date();
+    const user = userRepo.create({
+      id: randomUUID(),
+      email,
+      username,
+      passwordHash,
+      createdAt: now,
+      updatedAt: now,
     });
+    await userRepo.save(user);
     setAuthCookies(reply, user.id);
     return reply.status(201).send({
       user: { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt },
@@ -51,8 +60,8 @@ async function authRoutes(fastify: FastifyInstance) {
     const loginNorm = login.trim();
     const isEmail = loginNorm.includes("@");
     const user = isEmail
-      ? await prisma.user.findUnique({ where: { email: loginNorm.toLowerCase() } })
-      : await prisma.user.findUnique({ where: { username: loginNorm.toLowerCase() } });
+      ? await getRepository(User).findOne({ where: { email: loginNorm.toLowerCase() } })
+      : await getRepository(User).findOne({ where: { username: loginNorm.toLowerCase() } });
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return reply.status(401).send({ error: "E-mail/usuário ou senha inválidos" });
     }
@@ -89,7 +98,7 @@ async function authRoutes(fastify: FastifyInstance) {
       clearAuthCookies(reply);
       return reply.status(401).send({ error: "Invalid or expired refresh token" });
     }
-    const user = await prisma.user.findUnique({
+    const user = await getRepository(User).findOne({
       where: { id: payload.userId },
       select: { id: true, email: true, username: true, createdAt: true },
     });

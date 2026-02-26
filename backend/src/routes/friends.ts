@@ -1,5 +1,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { prisma } from "../lib/db.js";
+import { randomUUID } from "crypto";
+import { AppDataSource, getRepository } from "../lib/db.js";
+import { User } from "../entities/User.js";
+import { FriendInvite } from "../entities/FriendInvite.js";
+import { Friendship } from "../entities/Friendship.js";
+import { Notification } from "../entities/Notification.js";
 import { requireAuth } from "../lib/auth.js";
 import { inviteFriendSchema } from "../lib/validation.js";
 import { sendToUser } from "../ws/handler.js";
@@ -9,33 +14,35 @@ async function friendRoutes(fastify: FastifyInstance) {
 
   fastify.get("/api/friends", async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-    const friendships = await prisma.friendship.findMany({
-      where: {
-        OR: [{ userAId: request.userId }, { userBId: request.userId }],
-      },
-      include: {
-        userA: { select: { id: true, username: true, createdAt: true } },
-        userB: { select: { id: true, username: true, createdAt: true } },
-      },
+    const friendships = await getRepository(Friendship).find({
+      where: [
+        { userAId: request.userId },
+        { userBId: request.userId },
+      ],
+      relations: { userA: true, userB: true },
     });
     const friends = friendships.map((f) =>
-      f.userAId === request.userId ? f.userB : f.userA
+      f.userAId === request.userId ? f.userB! : f.userA!
     );
-    return reply.send({ friends });
+    return reply.send({
+      friends: friends.map((u) => ({
+        id: u.id,
+        username: u.username,
+        createdAt: u.createdAt,
+      })),
+    });
   });
 
   fastify.get("/api/friends/invites", async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-    const invites = await prisma.friendInvite.findMany({
-      where: { toUserId: request.userId, status: "pending" },
-      include: {
-        fromUser: { select: { id: true, username: true } },
-      },
+    const invites = await getRepository(FriendInvite).find({
+      where: { toUserId: request.userId!, status: "pending" },
+      relations: { fromUser: true },
     });
     return reply.send({
       invites: invites.map((i) => ({
         id: i.id,
-        fromUser: i.fromUser,
+        fromUser: i.fromUser ? { id: i.fromUser.id, username: i.fromUser.username } : undefined,
         createdAt: i.createdAt,
       })),
     });
@@ -55,7 +62,7 @@ async function friendRoutes(fastify: FastifyInstance) {
         toUserId = targetUserId;
       } else if (username) {
         const normalized = (username as string).trim().toLowerCase();
-        const user = await prisma.user.findUnique({ where: { username: normalized } });
+        const user = await getRepository(User).findOne({ where: { username: normalized } });
         if (!user) {
           return reply.status(404).send({ error: "User not found" });
         }
@@ -66,59 +73,67 @@ async function friendRoutes(fastify: FastifyInstance) {
       if (toUserId === request.userId) {
         return reply.status(400).send({ error: "Cannot invite yourself" });
       }
-      const existingFriendship = await prisma.friendship.findFirst({
-        where: {
-          OR: [
-            { userAId: request.userId!, userBId: toUserId },
-            { userAId: toUserId, userBId: request.userId! },
-          ],
-        },
+      const friendshipRepo = getRepository(Friendship);
+      const existingFriendship = await friendshipRepo.findOne({
+        where: [
+          { userAId: request.userId!, userBId: toUserId },
+          { userAId: toUserId, userBId: request.userId! },
+        ],
       });
       if (existingFriendship) {
         return reply.status(409).send({ error: "Already friends" });
       }
-      const existingInvite = await prisma.friendInvite.findUnique({
-        where: {
-          fromUserId_toUserId: { fromUserId: request.userId!, toUserId },
-        },
+      const inviteRepo = getRepository(FriendInvite);
+      const existingInvite = await inviteRepo.findOne({
+        where: { fromUserId: request.userId!, toUserId },
       });
       if (existingInvite) {
         if (existingInvite.status === "pending") {
           return reply.status(409).send({ error: "Invite already sent" });
         }
       }
-      const [userAId, userBId] = [request.userId!, toUserId].sort();
-      const invite = await prisma.friendInvite.upsert({
-        where: { fromUserId_toUserId: { fromUserId: request.userId!, toUserId } },
-        create: { fromUserId: request.userId!, toUserId, status: "pending" },
-        update: { status: "pending" },
-        include: {
-          toUser: { select: { id: true, username: true } },
-          fromUser: { select: { id: true, username: true } },
-        },
+      let invite: FriendInvite;
+      if (existingInvite) {
+        existingInvite.status = "pending";
+        await inviteRepo.save(existingInvite);
+        invite = existingInvite;
+      } else {
+        invite = inviteRepo.create({
+          id: randomUUID(),
+          fromUserId: request.userId!,
+          toUserId,
+          status: "pending",
+        });
+        await inviteRepo.save(invite);
+      }
+      const inviteWithUsers = await inviteRepo.findOne({
+        where: { id: invite.id },
+        relations: { fromUser: true, toUser: true },
       });
-      const existingNotification = await prisma.notification.findFirst({
+      const existingNotification = await getRepository(Notification).findOne({
         where: { userId: toUserId, friendInviteId: invite.id },
       });
       if (!existingNotification) {
-        await prisma.notification.create({
-          data: {
-            userId: toUserId,
-            type: "friend_invite",
-            friendInviteId: invite.id,
-            read: false,
-          },
+        const notif = getRepository(Notification).create({
+          id: randomUUID(),
+          userId: toUserId,
+          type: "friend_invite",
+          friendInviteId: invite.id,
+          read: false,
         });
+        await getRepository(Notification).save(notif);
       }
+      const fromUser = inviteWithUsers?.fromUser ?? invite.fromUser;
       sendToUser(toUserId, {
         type: "friend_invite",
         inviteId: invite.id,
-        fromUser: invite.fromUser,
+        fromUser: fromUser ? { id: fromUser.id, username: fromUser.username } : undefined,
       });
+      const toUser = inviteWithUsers?.toUser;
       return reply.status(201).send({
         invite: {
           id: invite.id,
-          toUser: invite.toUser,
+          toUser: toUser ? { id: toUser.id, username: toUser.username } : undefined,
           status: invite.status,
           createdAt: invite.createdAt,
         },
@@ -130,7 +145,7 @@ async function friendRoutes(fastify: FastifyInstance) {
     "/api/friends/invites/:id/accept",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-      const invite = await prisma.friendInvite.findUnique({
+      const invite = await getRepository(FriendInvite).findOne({
         where: { id: request.params.id },
       });
       if (!invite || invite.toUserId !== request.userId) {
@@ -140,22 +155,24 @@ async function friendRoutes(fastify: FastifyInstance) {
         return reply.status(409).send({ error: "Invite already processed" });
       }
       const [userAId, userBId] = [invite.fromUserId, invite.toUserId].sort();
-      await prisma.$transaction([
-        prisma.friendInvite.update({
-          where: { id: invite.id },
-          data: { status: "accepted" },
-        }),
-        prisma.friendship.upsert({
-          where: { userAId_userBId: { userAId, userBId } },
-          create: { userAId, userBId },
-          update: {},
-        }),
-      ]);
-      const friend = await prisma.user.findUnique({
+      await AppDataSource.transaction(async (manager) => {
+        await manager.getRepository(FriendInvite).update({ id: invite.id }, { status: "accepted" });
+        const friendshipRepo = manager.getRepository(Friendship);
+        let friendship = await friendshipRepo.findOne({ where: { userAId, userBId } });
+        if (!friendship) {
+          friendship = friendshipRepo.create({
+            id: randomUUID(),
+            userAId,
+            userBId,
+          });
+          await friendshipRepo.save(friendship);
+        }
+      });
+      const friend = await getRepository(User).findOne({
         where: { id: invite.fromUserId },
         select: { id: true, username: true },
       });
-      const newFriendForInviter = await prisma.user.findUnique({
+      const newFriendForInviter = await getRepository(User).findOne({
         where: { id: invite.toUserId },
         select: { id: true, username: true },
       });
@@ -165,7 +182,7 @@ async function friendRoutes(fastify: FastifyInstance) {
           friend: newFriendForInviter,
         });
       }
-      return reply.send({ friend });
+      return reply.send({ friend: friend ?? undefined });
     }
   );
 
@@ -173,7 +190,7 @@ async function friendRoutes(fastify: FastifyInstance) {
     "/api/friends/invites/:id/reject",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
-      const invite = await prisma.friendInvite.findUnique({
+      const invite = await getRepository(FriendInvite).findOne({
         where: { id: request.params.id },
       });
       if (!invite || invite.toUserId !== request.userId) {
@@ -182,10 +199,7 @@ async function friendRoutes(fastify: FastifyInstance) {
       if (invite.status !== "pending") {
         return reply.status(409).send({ error: "Invite already processed" });
       }
-      await prisma.friendInvite.update({
-        where: { id: invite.id },
-        data: { status: "rejected" },
-      });
+      await getRepository(FriendInvite).update({ id: invite.id }, { status: "rejected" });
       return reply.send({ ok: true });
     }
   );
@@ -199,15 +213,13 @@ async function friendRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: "Cannot remove yourself" });
       }
       const [userAId, userBId] = [request.userId, friendId].sort();
-      const friendship = await prisma.friendship.findUnique({
-        where: { userAId_userBId: { userAId, userBId } },
+      const friendship = await getRepository(Friendship).findOne({
+        where: { userAId, userBId },
       });
       if (!friendship) {
         return reply.status(404).send({ error: "Friendship not found" });
       }
-      await prisma.friendship.delete({
-        where: { userAId_userBId: { userAId, userBId } },
-      });
+      await getRepository(Friendship).delete({ userAId, userBId });
       sendToUser(request.userId, { type: "friend_removed", friendId });
       sendToUser(friendId, { type: "friend_removed", friendId: request.userId });
       return reply.status(204).send();

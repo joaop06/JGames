@@ -1,6 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import { WebSocket } from "ws";
-import { prisma } from "../lib/db.js";
+import { randomUUID } from "crypto";
+import { AppDataSource, getRepository } from "../lib/db.js";
+import { Match } from "../entities/Match.js";
+import { Move } from "../entities/Move.js";
+import { UserGameStats } from "../entities/UserGameStats.js";
+import { FriendGameRecord } from "../entities/FriendGameRecord.js";
 import { verifyWsToken } from "../lib/auth.js";
 import {
   getWinner,
@@ -65,20 +70,20 @@ async function tryMatchTicTacToe() {
   q.splice(idxA, 1);
   if (q.length === 0) matchmakingQueue.delete(gameType);
 
-  const match = await prisma.match.create({
-    data: {
-      gameType: TIC_TAC_TOE_GAME_TYPE,
-      playerXId: playerXId!,
-      playerOId: playerOId!,
-      status: "in_progress",
-    },
-    include: {
-      playerX: { select: { id: true, username: true } },
-      playerO: { select: { id: true, username: true } },
-      moves: true,
-    },
+  const matchRepo = getRepository(Match);
+  const match = matchRepo.create({
+    id: randomUUID(),
+    gameType: TIC_TAC_TOE_GAME_TYPE,
+    playerXId: playerXId!,
+    playerOId: playerOId!,
+    status: "in_progress",
   });
-  const state = buildMatchState(match);
+  await matchRepo.save(match);
+  const matchWithRelations = await matchRepo.findOne({
+    where: { id: match.id },
+    relations: { playerX: true, playerO: true, moves: true },
+  })!;
+  const state = buildMatchState({ ...matchWithRelations, moves: matchWithRelations.moves ?? [] });
   sendToUser(playerXId!, {
     type: "match_ready",
     matchId: match.id,
@@ -151,56 +156,58 @@ async function updateStatsForFinishedMatch(
   const [userAId, userBId] = [playerXId, playerOId].sort();
   const isDrawResult = winnerId === null;
   const winner = winnerId;
-  await prisma.$transaction([
-    prisma.userGameStats.upsert({
-      where: { userId_gameType: { userId: playerXId, gameType: TIC_TAC_TOE_GAME_TYPE } },
-      create: {
-        userId: playerXId,
-        gameType: TIC_TAC_TOE_GAME_TYPE,
-        wins: winner === playerXId ? 1 : 0,
-        losses: winner === playerOId ? 1 : 0,
-        draws: isDrawResult ? 1 : 0,
-      },
-      update: {
-        wins: { increment: winner === playerXId ? 1 : 0 },
-        losses: { increment: winner === playerOId ? 1 : 0 },
-        draws: { increment: isDrawResult ? 1 : 0 },
-      },
-    }),
-    prisma.userGameStats.upsert({
-      where: { userId_gameType: { userId: playerOId, gameType: TIC_TAC_TOE_GAME_TYPE } },
-      create: {
-        userId: playerOId,
-        gameType: TIC_TAC_TOE_GAME_TYPE,
-        wins: winner === playerOId ? 1 : 0,
-        losses: winner === playerXId ? 1 : 0,
-        draws: isDrawResult ? 1 : 0,
-      },
-      update: {
-        wins: { increment: winner === playerOId ? 1 : 0 },
-        losses: { increment: winner === playerXId ? 1 : 0 },
-        draws: { increment: isDrawResult ? 1 : 0 },
-      },
-    }),
-    prisma.friendGameRecord.upsert({
-      where: {
-        userAId_userBId_gameType: { userAId, userBId, gameType: TIC_TAC_TOE_GAME_TYPE },
-      },
-      create: {
+  await AppDataSource.transaction(async (manager) => {
+    const statsRepo = manager.getRepository(UserGameStats);
+    const recordRepo = manager.getRepository(FriendGameRecord);
+    for (const [userId, isPlayerX] of [
+      [playerXId, true],
+      [playerOId, false],
+    ] as const) {
+      let row = await statsRepo.findOne({
+        where: { userId, gameType: TIC_TAC_TOE_GAME_TYPE },
+      });
+      const addWin = winner === userId ? 1 : 0;
+      const addLoss = winner === (isPlayerX ? playerOId : playerXId) ? 1 : 0;
+      const addDraw = isDrawResult ? 1 : 0;
+      if (row) {
+        row.wins += addWin;
+        row.losses += addLoss;
+        row.draws += addDraw;
+        await statsRepo.save(row);
+      } else {
+        row = statsRepo.create({
+          userId,
+          gameType: TIC_TAC_TOE_GAME_TYPE,
+          wins: addWin,
+          losses: addLoss,
+          draws: addDraw,
+        });
+        await statsRepo.save(row);
+      }
+    }
+    let record = await recordRepo.findOne({
+      where: { userAId, userBId, gameType: TIC_TAC_TOE_GAME_TYPE },
+    });
+    const addWinsA = winner === userAId ? 1 : 0;
+    const addWinsB = winner === userBId ? 1 : 0;
+    const addDraws = isDrawResult ? 1 : 0;
+    if (record) {
+      record.winsA += addWinsA;
+      record.winsB += addWinsB;
+      record.draws += addDraws;
+      await recordRepo.save(record);
+    } else {
+      record = recordRepo.create({
         userAId,
         userBId,
         gameType: TIC_TAC_TOE_GAME_TYPE,
-        winsA: winner === userAId ? 1 : 0,
-        winsB: winner === userBId ? 1 : 0,
-        draws: isDrawResult ? 1 : 0,
-      },
-      update: {
-        winsA: { increment: winner === userAId ? 1 : 0 },
-        winsB: { increment: winner === userBId ? 1 : 0 },
-        draws: { increment: isDrawResult ? 1 : 0 },
-      },
-    }),
-  ]);
+        winsA: addWinsA,
+        winsB: addWinsB,
+        draws: addDraws,
+      });
+      await recordRepo.save(record);
+    }
+  });
 }
 
 export async function registerWebSocket(server: FastifyInstance) {
@@ -231,14 +238,14 @@ export async function registerWebSocket(server: FastifyInstance) {
           send(socket, { type: "error", code: "invalid_payload", message: "Unsupported game type" });
           return;
         }
-        await prisma.match.updateMany({
-          where: {
+        await getRepository(Match).update(
+          {
             gameType: TIC_TAC_TOE_GAME_TYPE,
             status: "waiting",
             playerXId: userId,
           },
-          data: { status: "abandoned" },
-        });
+          { status: "abandoned" }
+        );
         removeFromQueue(gameType, userId);
         let q = matchmakingQueue.get(gameType);
         if (!q) {
@@ -262,13 +269,9 @@ export async function registerWebSocket(server: FastifyInstance) {
           send(socket, { type: "error", code: "invalid_payload", message: "matchId required" });
           return;
         }
-        const match = await prisma.match.findUnique({
+        const match = await getRepository(Match).findOne({
           where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
-          include: {
-            playerX: { select: { id: true, username: true } },
-            playerO: { select: { id: true, username: true } },
-            moves: true,
-          },
+          relations: { playerX: true, playerO: true, moves: true },
         });
         if (!match) {
           send(socket, { type: "error", code: "not_found", message: "Match not found" });
@@ -287,7 +290,7 @@ export async function registerWebSocket(server: FastifyInstance) {
           matchConnections.set(matchId, conns);
         }
         conns.add({ ws: socket, userId });
-        const state = buildMatchState(match);
+        const state = buildMatchState({ ...match, moves: match.moves ?? [] });
         send(socket, { type: "match_state", ...state });
         return;
       }
@@ -311,9 +314,9 @@ export async function registerWebSocket(server: FastifyInstance) {
           send(socket, { type: "error", code: "invalid_payload", message: "position must be 0-8" });
           return;
         }
-        const match = await prisma.match.findUnique({
+        const match = await getRepository(Match).findOne({
           where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
-          include: { moves: true, playerX: { select: { id: true, username: true } }, playerO: { select: { id: true, username: true } } },
+          relations: { moves: true, playerX: true, playerO: true },
         });
         if (!match) {
           send(socket, { type: "error", code: "not_found", message: "Match not found" });
@@ -328,7 +331,7 @@ export async function registerWebSocket(server: FastifyInstance) {
           return;
         }
         const board = boardFromMoves(
-          match.moves.map((m) => ({ position: m.position, playerId: m.playerId })),
+          (match.moves ?? []).map((m) => ({ position: m.position, playerId: m.playerId })),
           match.playerXId,
           match.playerOId
         );
@@ -343,10 +346,15 @@ export async function registerWebSocket(server: FastifyInstance) {
           send(socket, { type: "error", code: "not_your_turn", message: "Not your turn" });
           return;
         }
-        const move = await prisma.move.create({
-          data: { matchId, playerId: userId, position },
+        const moveRepo = getRepository(Move);
+        const move = moveRepo.create({
+          id: randomUUID(),
+          matchId,
+          playerId: userId,
+          position,
         });
-        const newMoves = [...match.moves, { position: move.position, playerId: move.playerId }];
+        await moveRepo.save(move);
+        const newMoves = [...(match.moves ?? []), { position: move.position, playerId: move.playerId }];
         const newBoard = boardFromMoves(
           newMoves.map((m) => ({ position: m.position, playerId: m.playerId })),
           match.playerXId,
@@ -358,22 +366,21 @@ export async function registerWebSocket(server: FastifyInstance) {
         let winnerId: string | null = null;
         if (winner) winnerId = winner === "X" ? match.playerXId : match.playerOId;
         if (finished) {
-          await prisma.match.update({
-            where: { id: matchId },
-            data: { status: "finished", winnerId, finishedAt: new Date() },
-          });
+          await getRepository(Match).update(
+            { id: matchId },
+            { status: "finished", winnerId, finishedAt: new Date() }
+          );
           await updateStatsForFinishedMatch(match.playerXId, match.playerOId, winnerId);
         }
-        const updatedMatch = await prisma.match.findUnique({
+        const updatedMatch = await getRepository(Match).findOne({
           where: { id: matchId },
-          include: {
-            moves: true,
-            playerX: { select: { id: true, username: true } },
-            playerO: { select: { id: true, username: true } },
-          },
+          relations: { moves: true, playerX: true, playerO: true },
         });
         if (updatedMatch) {
-          const state = buildMatchState(updatedMatch);
+          const state = buildMatchState({
+            ...updatedMatch,
+            moves: updatedMatch.moves ?? [],
+          });
           broadcastMatch(matchId, { type: "match_state", ...state });
         }
         return;

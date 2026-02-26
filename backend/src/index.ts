@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -11,6 +12,8 @@ import ticTacToeRoutes from "./routes/games/tic-tac-toe.js";
 import { registerWebSocket } from "./ws/handler.js";
 
 const app = Fastify({ logger: true });
+
+await import("./lib/typeorm.js").then((m) => m.initDataSource());
 
 await app.register(cookie, { secret: process.env.JWT_SECRET ?? "cookie-secret" });
 await app.register(cors, {

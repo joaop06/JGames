@@ -1,6 +1,6 @@
 # Plataforma de Jogos Multiplayer
 
-Plataforma web para jogos multiplayer (jogo da velha, forca, etc.) com cadastro de usuários, amigos e convites. Stack: backend Fastify + Prisma (PostgreSQL), frontend React + Vite, tudo rodando em Docker.
+Plataforma web para jogos multiplayer (jogo da velha, forca, etc.) com cadastro de usuários, amigos e convites. Stack: backend Fastify + TypeORM (PostgreSQL), frontend React + Vite, tudo rodando em Docker.
 
 ## Pré-requisitos
 
@@ -28,7 +28,7 @@ Plataforma web para jogos multiplayer (jogo da velha, forca, etc.) com cadastro 
 
    **Atenção:** Evite usar a porta **5000** no navegador. O Firefox (e outros) bloqueiam essa porta por segurança. Use 5173, 6000 ou outra porta configurada em `FRONTEND_PORT`.  
 
-As migrations do Prisma são aplicadas automaticamente ao iniciar o backend.
+O schema do banco já existe; alterações futuras podem usar migrations do TypeORM.
 
 ## O que está disponível
 
@@ -49,7 +49,6 @@ As migrations do Prisma são aplicadas automaticamente ao iniciar o backend.
    ```bash
    cd backend
    npm install
-   npx prisma migrate deploy
    npm run dev
    ```
 
@@ -81,10 +80,10 @@ Consulte `.env.example`. Principais:
 games/
 ├── docker-compose.yml    # db, backend, frontend
 ├── .env.example
-├── backend/              # Fastify + Prisma + JWT
-│   ├── prisma/
+├── backend/              # Fastify + TypeORM + JWT
 │   ├── src/
-│   │   ├── routes/       # auth, users, friends
+│   │   ├── entities/     # entidades TypeORM
+│   │   ├── routes/       # auth, users, friends, games
 │   │   └── lib/          # db, auth, validation
 │   └── Dockerfile
 └── frontend/             # React + Vite

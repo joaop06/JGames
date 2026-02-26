@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { prisma } from "./db.js";
+import { getRepository } from "./db.js";
+import { User } from "../entities/User.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -108,7 +109,7 @@ export async function authenticate(
   if (refresh) {
     const payload = verifyRefreshToken(refresh);
     if (payload) {
-      const user = await prisma.user.findUnique({
+      const user = await getRepository(User).findOne({
         where: { id: payload.userId },
         select: { id: true },
       });

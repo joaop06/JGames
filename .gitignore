@@ -7,6 +7,3 @@ build
 .env.local
 .env.*.local
 
-# Prisma
-backend/prisma/*.db
-backend/prisma/*.db-journal

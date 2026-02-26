@@ -2,7 +2,7 @@
 # Uso: make <target>
 
 .PHONY: help setup up down build reload deploy dev dev-down dev-build logs shell-backend shell-db \
-	backend-install backend-dev backend-build backend-db-generate backend-db-migrate backend-db-push \
+	backend-install backend-dev backend-build \
 	frontend-install frontend-dev frontend-build frontend-preview \
 	clean
 
@@ -22,16 +22,11 @@ help:
 	@echo "    make logs            - Mostra logs de todos os serviços"
 	@echo "    make shell-backend   - Abre shell no container do backend"
 	@echo "    make shell-db        - Abre psql no container do banco"
-	@echo "  Deploy: Se o backend não subir por migração falhada (P3009), use: make shell-backend, depois"
-	@echo "    npx prisma migrate resolve --applied <migration_name> ou --rolled-back <migration_name>"
 	@echo ""
 	@echo "  Backend (local, em backend/):"
 	@echo "    make backend-install       - npm install no backend"
 	@echo "    make backend-dev           - Inicia backend em modo dev (tsx watch)"
 	@echo "    make backend-build         - Compila TypeScript"
-	@echo "    make backend-db-generate   - prisma generate"
-	@echo "    make backend-db-migrate    - prisma migrate dev"
-	@echo "    make backend-db-push       - prisma db push"
 	@echo ""
 	@echo "  Frontend (local, em frontend/):"
 	@echo "    make frontend-install - npm install no frontend"
@@ -65,14 +60,14 @@ reload: down
 deploy: setup
 	docker compose down
 	docker compose up -d --build
-	@echo "Deploy concluído. Backend executa 'prisma migrate deploy' no start; frontend só sobe após backend healthy."
+	@echo "Deploy concluído. Frontend só sobe após backend healthy."
 
 # --- Docker Dev (hot reload) ---
 DEV_COMPOSE = -f docker-compose.yml -f docker-compose.dev.yml
 
 dev: setup
 	docker compose $(DEV_COMPOSE) up -d --build
-	@echo "Modo dev ativo. Backend executa migrations no start; alterações em backend/ e frontend/ recarregam automaticamente."
+	@echo "Modo dev ativo. Alterações em backend/ e frontend/ recarregam automaticamente."
 
 dev-down:
 	docker compose $(DEV_COMPOSE) down
@@ -98,15 +93,6 @@ backend-dev:
 
 backend-build:
 	cd backend && npm run build
-
-backend-db-generate:
-	cd backend && npm run db:generate
-
-backend-db-migrate:
-	cd backend && npm run db:migrate
-
-backend-db-push:
-	cd backend && npm run db:push
 
 # --- Frontend (local) ---
 frontend-install:
