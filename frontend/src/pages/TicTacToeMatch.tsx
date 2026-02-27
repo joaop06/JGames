@@ -49,11 +49,13 @@ export default function TicTacToeMatch() {
       })
       setError(null)
       setConnecting(false)
+    } else if (msg.type === 'match_ended') {
+      navigate('/games/tic-tac-toe')
     } else if (msg.type === 'error') {
       setError(getUserMessage(msg.message ?? msg.code ?? ''))
       setConnecting(false)
     }
-  }, [])
+  }, [navigate])
 
   useEffect(() => {
     if (!matchId) return

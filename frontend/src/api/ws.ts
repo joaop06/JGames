@@ -31,6 +31,7 @@ export type WsMessage =
       gameType: string
     }
   | { type: 'game_invite_opponent_busy'; opponentUsername: string }
+  | { type: 'match_ended'; matchId?: string }
   | {
       type: 'match_ready'
       matchId: string

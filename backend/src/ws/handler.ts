@@ -184,6 +184,31 @@ function removeConnection(matchId: string, ws: WebSocket) {
   }
 }
 
+async function endMatchIfActiveAndNotifyOpponent(
+  matchId: string,
+  userId: string,
+  socket: WebSocket
+) {
+  const match = await getRepository(Match).findOne({
+    where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
+  });
+  if (!match) {
+    removeConnection(matchId, socket);
+    return;
+  }
+  if (match.status !== "waiting" && match.status !== "in_progress") {
+    removeConnection(matchId, socket);
+    return;
+  }
+  await getRepository(Match).update({ id: matchId }, { status: "abandoned" });
+  const opponentId =
+    match.playerXId === userId ? match.playerOId : match.playerXId;
+  if (opponentId) {
+    sendToUser(opponentId, { type: "match_ended", matchId });
+  }
+  removeConnection(matchId, socket);
+}
+
 async function updateStatsForFinishedMatch(
   playerXId: string,
   playerOId: string,
@@ -339,7 +364,7 @@ export async function registerWebSocket(server: FastifyInstance) {
 
         if (data.type === "leave_match") {
         if (currentMatchId) {
-          removeConnection(currentMatchId, socket);
+          await endMatchIfActiveAndNotifyOpponent(currentMatchId, userId, socket);
           currentMatchId = null;
         }
         return;
@@ -448,8 +473,10 @@ export async function registerWebSocket(server: FastifyInstance) {
     });
 
     socket.on("close", () => {
+      if (currentMatchId) {
+        endMatchIfActiveAndNotifyOpponent(currentMatchId, userId, socket).catch(() => {});
+      }
       removeUserConnection(userId, socket);
-      if (currentMatchId) removeConnection(currentMatchId, socket);
       removeFromQueue(TIC_TAC_TOE_GAME_TYPE, userId);
     });
   });
