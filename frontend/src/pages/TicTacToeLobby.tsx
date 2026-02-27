@@ -17,8 +17,19 @@ export default function TicTacToeLobby() {
   useEffect(() => {
     api
       .listTicTacToeMatches({ limit: 20 })
-      .then((res) => setMatches(res.matches))
-      .catch(() => setError('Falha ao carregar partidas'))
+      .then((res) => {
+        setMatches(res.matches)
+        setError(null)
+      })
+      .catch((err) => {
+        const msg =
+          err instanceof Error
+            ? err.message === 'Failed to fetch'
+              ? 'Não foi possível conectar ao servidor. Verifique sua conexão.'
+              : err.message
+            : 'Falha ao carregar partidas'
+        setError(msg)
+      })
       .finally(() => setLoading(false))
   }, [])
 

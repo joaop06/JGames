@@ -228,7 +228,7 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         .leftJoinAndSelect("m.playerX", "playerX")
         .leftJoinAndSelect("m.playerO", "playerO")
         .where("(m.player_x_id = :userId OR m.player_o_id = :userId)", { userId: request.userId })
-        .orderBy("m.created_at", "DESC")
+        .orderBy("m.createdAt", "DESC")
         .take(limit);
       if (statusFilter) qb.andWhere("m.status = :status", { status: statusFilter });
       const matches = await qb.getMany();
@@ -326,10 +326,10 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
       const isA = request.userId === userAId;
       const result = record
         ? {
-            wins: isA ? record.winsA : record.winsB,
-            losses: isA ? record.winsB : record.winsA,
-            draws: record.draws,
-          }
+          wins: isA ? record.winsA : record.winsB,
+          losses: isA ? record.winsB : record.winsA,
+          draws: record.draws,
+        }
         : { wins: 0, losses: 0, draws: 0 };
       return reply.send({ stats: result });
     }
