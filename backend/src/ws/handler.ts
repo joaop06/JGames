@@ -1,28 +1,27 @@
-import type { FastifyInstance } from "fastify";
-import { WebSocket } from "ws";
-import { randomUUID } from "crypto";
-import { In } from "typeorm";
-import { AppDataSource, getRepository } from "../lib/db.js";
-import { Match } from "../entities/Match.js";
-import { Move } from "../entities/Move.js";
-import { UserGameStats } from "../entities/UserGameStats.js";
-import { FriendGameRecord } from "../entities/FriendGameRecord.js";
-import { verifyWsToken } from "../lib/auth.js";
-import { sanitizeForLog } from "../lib/logger.js";
+import type { FastifyInstance } from 'fastify';
+import { WebSocket } from 'ws';
+import { randomUUID } from 'crypto';
+import { In } from 'typeorm';
+import { AppDataSource, getRepository } from '../lib/db.js';
+import { Match } from '../entities/Match.js';
+import { Move } from '../entities/Move.js';
+import { UserGameStats } from '../entities/UserGameStats.js';
+import { FriendGameRecord } from '../entities/FriendGameRecord.js';
+import { verifyWsToken } from '../lib/auth.js';
+import { sanitizeForLog } from '../lib/logger.js';
 import {
   getWinner,
   isDraw,
   isValidPosition,
   boardFromMoves,
   currentTurn,
-  type Board,
-} from "../lib/tic-tac-toe.js";
+} from '../lib/tic-tac-toe.js';
 import {
   buildMatchState,
   type BuildMatchStateArg,
   TIC_TAC_TOE_GAME_TYPE,
   areFriends,
-} from "../routes/games/tic-tac-toe.js";
+} from '../routes/games/tic-tac-toe.js';
 
 type Connection = { ws: WebSocket; userId: string };
 const matchConnections = new Map<string, Set<Connection>>();
@@ -88,26 +87,29 @@ async function tryMatchTicTacToe() {
     gameType: TIC_TAC_TOE_GAME_TYPE,
     playerXId: playerXId!,
     playerOId: playerOId!,
-    status: "in_progress",
+    status: 'in_progress',
   });
   await matchRepo.save(match);
   const matchWithRelations = await matchRepo.findOne({
     where: { id: match.id },
     relations: { playerX: true, playerO: true, moves: true },
   });
-  if (!matchWithRelations) throw new Error("Match not found");
+  if (!matchWithRelations) throw new Error('Match not found');
   const state = buildMatchState({
     ...matchWithRelations,
-    moves: (matchWithRelations.moves ?? []).map((m: Move) => ({ position: m.position, playerId: m.playerId })),
+    moves: (matchWithRelations.moves ?? []).map((m: Move) => ({
+      position: m.position,
+      playerId: m.playerId,
+    })),
   } as BuildMatchStateArg);
   sendToUser(playerXId!, {
-    type: "match_ready",
+    type: 'match_ready',
     matchId: match.id,
     gameType: TIC_TAC_TOE_GAME_TYPE,
     match: state,
   });
   sendToUser(playerOId!, {
-    type: "match_ready",
+    type: 'match_ready',
     matchId: match.id,
     gameType: TIC_TAC_TOE_GAME_TYPE,
     match: state,
@@ -132,12 +134,14 @@ function sendWsError(
   err?: Error
 ) {
   const logPayload = {
-    msg: "WebSocket error",
+    msg: 'WebSocket error',
     userId,
     matchId: matchId ?? undefined,
     messageType,
     payload: sanitizeForLog(
-      payload != null && typeof payload === "object" && !Array.isArray(payload) ? payload : undefined
+      payload != null && typeof payload === 'object' && !Array.isArray(payload)
+        ? payload
+        : undefined
     ),
     code,
     errorMessage: message,
@@ -147,7 +151,7 @@ function sendWsError(
   };
   if (err != null) server.log.error(logPayload, err.message);
   else server.log.warn(logPayload);
-  send(socket, { type: "error", code, message });
+  send(socket, { type: 'error', code, message });
 }
 
 function addUserConnection(userId: string, ws: WebSocket) {
@@ -206,13 +210,12 @@ async function endMatchIfActiveAndNotifyOpponent(
     removeConnection(matchId, socket);
     return;
   }
-  const opponentId =
-    match.playerXId === userId ? match.playerOId : match.playerXId;
-  if (match.status === "waiting" || match.status === "in_progress") {
-    await getRepository(Match).update({ id: matchId }, { status: "abandoned" });
+  const opponentId = match.playerXId === userId ? match.playerOId : match.playerXId;
+  if (match.status === 'waiting' || match.status === 'in_progress') {
+    await getRepository(Match).update({ id: matchId }, { status: 'abandoned' });
   }
   if (opponentId) {
-    sendToUser(opponentId, { type: "match_ended", matchId });
+    sendToUser(opponentId, { type: 'match_ended', matchId });
   }
   removeConnection(matchId, socket);
 }
@@ -285,8 +288,8 @@ export async function getTicTacToeOnlineCount(): Promise<number> {
   const ids = new Set<string>();
 
   const activeMatches = await getRepository(Match).find({
-    where: { gameType: TIC_TAC_TOE_GAME_TYPE, status: In(["waiting", "in_progress"]) },
-    select: ["id"],
+    where: { gameType: TIC_TAC_TOE_GAME_TYPE, status: In(['waiting', 'in_progress']) },
+    select: ['id'],
   });
   for (const m of activeMatches) {
     const conns = matchConnections.get(m.id);
@@ -303,210 +306,345 @@ export async function getTicTacToeOnlineCount(): Promise<number> {
 }
 
 export async function registerWebSocket(server: FastifyInstance) {
-  server.get("/ws", { websocket: true }, (socket, request) => {
-    const url = new URL(request.url ?? "", "http://localhost");
-    const token = url.searchParams.get("token");
+  server.get('/ws', { websocket: true }, (socket, request) => {
+    const url = new URL(request.url ?? '', 'http://localhost');
+    const token = url.searchParams.get('token');
     const payload = token ? verifyWsToken(token) : null;
     if (!payload) {
-      socket.close(4401, "Unauthorized");
+      socket.close(4401, 'Unauthorized');
       return;
     }
     const userId = payload.userId;
     addUserConnection(userId, socket);
     let currentMatchId: string | null = null;
 
-    socket.on("message", async (raw: Buffer) => {
+    socket.on('message', async (raw: Buffer) => {
       let data: { type?: string; matchId?: string; position?: number; gameType?: string };
       try {
         data = JSON.parse(raw.toString());
       } catch {
-        sendWsError(server, socket, userId, null, undefined, undefined, "invalid_json", "Invalid JSON");
+        sendWsError(
+          server,
+          socket,
+          userId,
+          null,
+          undefined,
+          undefined,
+          'invalid_json',
+          'Invalid JSON'
+        );
         return;
       }
 
       try {
-        if (data.type === "join_queue") {
-        const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
-        if (gameType !== TIC_TAC_TOE_GAME_TYPE) {
-          sendWsError(server, socket, userId, null, data.type, data, "invalid_payload", "Unsupported game type");
-          return;
-        }
-        await getRepository(Match).update(
-          {
-            gameType: TIC_TAC_TOE_GAME_TYPE,
-            status: "waiting",
-            playerXId: userId,
-          },
-          { status: "abandoned" }
-        );
-        removeFromQueue(gameType, userId);
-        let q = matchmakingQueue.get(gameType);
-        if (!q) {
-          q = [];
-          matchmakingQueue.set(gameType, q);
-        }
-        q.push({ userId, joinedAt: Date.now() });
-        await tryMatchTicTacToe();
-        return;
-        }
-
-        if (data.type === "leave_queue") {
-        const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
-        removeFromQueue(gameType, userId);
-        return;
-        }
-
-        if (data.type === "join_lobby") {
-        const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
-        if (gameType !== TIC_TAC_TOE_GAME_TYPE) {
-          sendWsError(server, socket, userId, null, data.type, data, "invalid_payload", "Unsupported game type");
-          return;
-        }
-        let set = lobbyPresence.get(gameType);
-        if (!set) {
-          set = new Set();
-          lobbyPresence.set(gameType, set);
-        }
-        set.add(userId);
-        return;
-        }
-
-        if (data.type === "leave_lobby") {
-        const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
-        removeFromLobby(gameType, userId);
-        return;
-        }
-
-        if (data.type === "join_match") {
-        const matchId = data.matchId;
-        if (!matchId || typeof matchId !== "string") {
-          sendWsError(server, socket, userId, null, data.type, data, "invalid_payload", "matchId required");
-          return;
-        }
-        const match = await getRepository(Match).findOne({
-          where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
-          relations: { playerX: true, playerO: true, moves: true },
-        });
-        if (!match) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "not_found", "Match not found");
-          return;
-        }
-        const isPlayer = match.playerXId === userId || match.playerOId === userId;
-        if (!isPlayer) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "forbidden", "Not a player in this match");
-          return;
-        }
-        if (currentMatchId) removeConnection(currentMatchId, socket);
-        currentMatchId = matchId;
-        let conns = matchConnections.get(matchId);
-        if (!conns) {
-          conns = new Set();
-          matchConnections.set(matchId, conns);
-        }
-        conns.add({ ws: socket, userId });
-        const state = buildMatchState({
-          ...match,
-          moves: (match.moves ?? []).map((m: Move) => ({ position: m.position, playerId: m.playerId })),
-        } as BuildMatchStateArg);
-        send(socket, { type: "match_state", ...state });
-        return;
-        }
-
-        if (data.type === "leave_match") {
-        if (currentMatchId) {
-          await endMatchIfActiveAndNotifyOpponent(currentMatchId, userId, socket);
-          currentMatchId = null;
-        }
-        return;
-        }
-
-        if (data.type === "move") {
-        const matchId = data.matchId ?? currentMatchId;
-        const position = data.position;
-        if (!matchId) {
-          sendWsError(server, socket, userId, currentMatchId, data.type, data, "invalid_payload", "matchId required");
-          return;
-        }
-        if (typeof position !== "number" || !isValidPosition(position)) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "invalid_payload", "position must be 0-8");
-          return;
-        }
-        const match = await getRepository(Match).findOne({
-          where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
-          relations: { moves: true, playerX: true, playerO: true },
-        });
-        if (!match) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "not_found", "Match not found");
-          return;
-        }
-        if (match.status !== "in_progress") {
-          sendWsError(server, socket, userId, matchId, data.type, data, "invalid_state", "Match is not in progress");
-          return;
-        }
-        if (!match.playerOId) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "invalid_state", "Waiting for second player");
-          return;
-        }
-        const board = boardFromMoves(
-          (match.moves ?? []).map((m: Move) => ({ position: m.position, playerId: m.playerId })),
-          match.playerXId,
-          match.playerOId
-        );
-        if (board[position] !== null) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "invalid_move", "Position already taken");
-          return;
-        }
-        const turn = currentTurn(board);
-        const isX = turn === "X";
-        const currentPlayerId = isX ? match.playerXId : match.playerOId;
-        if (currentPlayerId !== userId) {
-          sendWsError(server, socket, userId, matchId, data.type, data, "not_your_turn", "Not your turn");
-          return;
-        }
-        const moveRepo = getRepository(Move);
-        const move = moveRepo.create({
-          id: randomUUID(),
-          matchId,
-          playerId: userId,
-          position,
-        });
-        await moveRepo.save(move);
-        const newMoves: { position: number; playerId: string }[] = [
-          ...(match.moves ?? []).map((m: Move) => ({ position: m.position, playerId: m.playerId })),
-          { position: move.position, playerId: move.playerId },
-        ];
-        const newBoard = boardFromMoves(
-          newMoves.map((m) => ({ position: m.position, playerId: m.playerId })),
-          match.playerXId,
-          match.playerOId
-        );
-        const winner = getWinner(newBoard);
-        const draw = isDraw(newBoard);
-        const finished = !!winner || draw;
-        let winnerId: string | null = null;
-        if (winner) winnerId = winner === "X" ? match.playerXId : match.playerOId;
-        if (finished) {
+        if (data.type === 'join_queue') {
+          const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
+          if (gameType !== TIC_TAC_TOE_GAME_TYPE) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              null,
+              data.type,
+              data,
+              'invalid_payload',
+              'Unsupported game type'
+            );
+            return;
+          }
           await getRepository(Match).update(
-            { id: matchId },
-            { status: "finished", winnerId, finishedAt: new Date() }
+            {
+              gameType: TIC_TAC_TOE_GAME_TYPE,
+              status: 'waiting',
+              playerXId: userId,
+            },
+            { status: 'abandoned' }
           );
-          await updateStatsForFinishedMatch(match.playerXId, match.playerOId, winnerId);
-        }
-        const updatedMatch = await getRepository(Match).findOne({
-          where: { id: matchId },
-          relations: { moves: true, playerX: true, playerO: true },
-        });
-        if (updatedMatch) {
-          const state = buildMatchState({
-            ...updatedMatch,
-            moves: (updatedMatch.moves ?? []).map((m: Move) => ({ position: m.position, playerId: m.playerId })),
-          } as BuildMatchStateArg);
-          broadcastMatch(matchId, { type: "match_state", ...state });
-        }
-        return;
+          removeFromQueue(gameType, userId);
+          let q = matchmakingQueue.get(gameType);
+          if (!q) {
+            q = [];
+            matchmakingQueue.set(gameType, q);
+          }
+          q.push({ userId, joinedAt: Date.now() });
+          await tryMatchTicTacToe();
+          return;
         }
 
-        sendWsError(server, socket, userId, currentMatchId, data?.type, data, "unknown_type", "Unknown message type");
+        if (data.type === 'leave_queue') {
+          const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
+          removeFromQueue(gameType, userId);
+          return;
+        }
+
+        if (data.type === 'join_lobby') {
+          const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
+          if (gameType !== TIC_TAC_TOE_GAME_TYPE) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              null,
+              data.type,
+              data,
+              'invalid_payload',
+              'Unsupported game type'
+            );
+            return;
+          }
+          let set = lobbyPresence.get(gameType);
+          if (!set) {
+            set = new Set();
+            lobbyPresence.set(gameType, set);
+          }
+          set.add(userId);
+          return;
+        }
+
+        if (data.type === 'leave_lobby') {
+          const gameType = data.gameType ?? TIC_TAC_TOE_GAME_TYPE;
+          removeFromLobby(gameType, userId);
+          return;
+        }
+
+        if (data.type === 'join_match') {
+          const matchId = data.matchId;
+          if (!matchId || typeof matchId !== 'string') {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              null,
+              data.type,
+              data,
+              'invalid_payload',
+              'matchId required'
+            );
+            return;
+          }
+          const match = await getRepository(Match).findOne({
+            where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
+            relations: { playerX: true, playerO: true, moves: true },
+          });
+          if (!match) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'not_found',
+              'Match not found'
+            );
+            return;
+          }
+          const isPlayer = match.playerXId === userId || match.playerOId === userId;
+          if (!isPlayer) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'forbidden',
+              'Not a player in this match'
+            );
+            return;
+          }
+          if (currentMatchId) removeConnection(currentMatchId, socket);
+          currentMatchId = matchId;
+          let conns = matchConnections.get(matchId);
+          if (!conns) {
+            conns = new Set();
+            matchConnections.set(matchId, conns);
+          }
+          conns.add({ ws: socket, userId });
+          const state = buildMatchState({
+            ...match,
+            moves: (match.moves ?? []).map((m: Move) => ({
+              position: m.position,
+              playerId: m.playerId,
+            })),
+          } as BuildMatchStateArg);
+          send(socket, { type: 'match_state', ...state });
+          return;
+        }
+
+        if (data.type === 'leave_match') {
+          if (currentMatchId) {
+            await endMatchIfActiveAndNotifyOpponent(currentMatchId, userId, socket);
+            currentMatchId = null;
+          }
+          return;
+        }
+
+        if (data.type === 'move') {
+          const matchId = data.matchId ?? currentMatchId;
+          const position = data.position;
+          if (!matchId) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              currentMatchId,
+              data.type,
+              data,
+              'invalid_payload',
+              'matchId required'
+            );
+            return;
+          }
+          if (typeof position !== 'number' || !isValidPosition(position)) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_payload',
+              'position must be 0-8'
+            );
+            return;
+          }
+          const match = await getRepository(Match).findOne({
+            where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
+            relations: { moves: true, playerX: true, playerO: true },
+          });
+          if (!match) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'not_found',
+              'Match not found'
+            );
+            return;
+          }
+          if (match.status !== 'in_progress') {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_state',
+              'Match is not in progress'
+            );
+            return;
+          }
+          if (!match.playerOId) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_state',
+              'Waiting for second player'
+            );
+            return;
+          }
+          const board = boardFromMoves(
+            (match.moves ?? []).map((m: Move) => ({ position: m.position, playerId: m.playerId })),
+            match.playerXId,
+            match.playerOId
+          );
+          if (board[position] !== null) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_move',
+              'Position already taken'
+            );
+            return;
+          }
+          const turn = currentTurn(board);
+          const isX = turn === 'X';
+          const currentPlayerId = isX ? match.playerXId : match.playerOId;
+          if (currentPlayerId !== userId) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'not_your_turn',
+              'Not your turn'
+            );
+            return;
+          }
+          const moveRepo = getRepository(Move);
+          const move = moveRepo.create({
+            id: randomUUID(),
+            matchId,
+            playerId: userId,
+            position,
+          });
+          await moveRepo.save(move);
+          const newMoves: { position: number; playerId: string }[] = [
+            ...(match.moves ?? []).map((m: Move) => ({
+              position: m.position,
+              playerId: m.playerId,
+            })),
+            { position: move.position, playerId: move.playerId },
+          ];
+          const newBoard = boardFromMoves(
+            newMoves.map((m) => ({ position: m.position, playerId: m.playerId })),
+            match.playerXId,
+            match.playerOId
+          );
+          const winner = getWinner(newBoard);
+          const draw = isDraw(newBoard);
+          const finished = !!winner || draw;
+          let winnerId: string | null = null;
+          if (winner) winnerId = winner === 'X' ? match.playerXId : match.playerOId;
+          if (finished) {
+            await getRepository(Match).update(
+              { id: matchId },
+              { status: 'finished', winnerId, finishedAt: new Date() }
+            );
+            await updateStatsForFinishedMatch(match.playerXId, match.playerOId, winnerId);
+          }
+          const updatedMatch = await getRepository(Match).findOne({
+            where: { id: matchId },
+            relations: { moves: true, playerX: true, playerO: true },
+          });
+          if (updatedMatch) {
+            const state = buildMatchState({
+              ...updatedMatch,
+              moves: (updatedMatch.moves ?? []).map((m: Move) => ({
+                position: m.position,
+                playerId: m.playerId,
+              })),
+            } as BuildMatchStateArg);
+            broadcastMatch(matchId, { type: 'match_state', ...state });
+          }
+          return;
+        }
+
+        sendWsError(
+          server,
+          socket,
+          userId,
+          currentMatchId,
+          data?.type,
+          data,
+          'unknown_type',
+          'Unknown message type'
+        );
       } catch (err) {
         sendWsError(
           server,
@@ -515,14 +653,14 @@ export async function registerWebSocket(server: FastifyInstance) {
           currentMatchId,
           data?.type,
           data,
-          "server_error",
-          "Algo deu errado. Tenta de novo.",
+          'server_error',
+          'Algo deu errado. Tenta de novo.',
           err instanceof Error ? err : new Error(String(err))
         );
       }
     });
 
-    socket.on("close", () => {
+    socket.on('close', () => {
       if (currentMatchId) {
         endMatchIfActiveAndNotifyOpponent(currentMatchId, userId, socket).catch(() => {});
       }

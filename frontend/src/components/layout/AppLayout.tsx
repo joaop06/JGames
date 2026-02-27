@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import Toast from '../Toast'
-import RealtimeToastsHandler from '../RealtimeToastsHandler'
-import NotificationPanel from '../NotificationPanel'
+import { useState } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import Toast from '../Toast';
+import RealtimeToastsHandler from '../RealtimeToastsHandler';
+import NotificationPanel from '../NotificationPanel';
 
 const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({
   color: isActive ? 'var(--accent-hover)' : 'var(--accent)',
@@ -12,20 +12,20 @@ const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({
   padding: 'var(--space-2) var(--space-3)',
   borderRadius: 'var(--radius-md)',
   transition: 'color var(--transition-fast), background var(--transition-fast)',
-})
+});
 
 export default function AppLayout() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function handleLogout() {
-    await logout()
-    navigate('/login', { replace: true })
+    await logout();
+    navigate('/login', { replace: true });
   }
 
   function closeDrawer() {
-    setMenuOpen(false)
+    setMenuOpen(false);
   }
 
   return (
@@ -61,7 +61,10 @@ export default function AppLayout() {
           >
             <img src="/logo.png" alt="JGames" className="header-logo-img" />
           </NavLink>
-          <div className="desktop-nav-links" style={{ alignItems: 'center', gap: 'var(--space-4)' }}>
+          <div
+            className="desktop-nav-links"
+            style={{ alignItems: 'center', gap: 'var(--space-4)' }}
+          >
             <NavLink to="/" style={navLinkStyle}>
               Início
             </NavLink>
@@ -91,12 +94,12 @@ export default function AppLayout() {
                     transition: 'color var(--transition-fast), border-color var(--transition-fast)',
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.color = 'var(--text-primary)'
-                    e.currentTarget.style.borderColor = 'var(--accent)'
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.color = 'var(--text-muted)'
-                    e.currentTarget.style.borderColor = 'var(--border)'
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
                   }}
                 >
                   Sair
@@ -126,7 +129,12 @@ export default function AppLayout() {
         aria-hidden
       />
       <aside className={`drawer ${menuOpen ? 'is-open' : ''}`} aria-label="Menu de navegação">
-        <button type="button" className="drawer-close" onClick={closeDrawer} aria-label="Fechar menu">
+        <button
+          type="button"
+          className="drawer-close"
+          onClick={closeDrawer}
+          aria-label="Fechar menu"
+        >
           &#215;
         </button>
         <NavLink to="/" className="drawer-nav-link" onClick={closeDrawer}>
@@ -140,14 +148,20 @@ export default function AppLayout() {
         </NavLink>
         {user && (
           <>
-            <span style={{ color: 'var(--text-muted)', fontSize: 'var(--size-sm)', padding: 'var(--space-3)' }}>
+            <span
+              style={{
+                color: 'var(--text-muted)',
+                fontSize: 'var(--size-sm)',
+                padding: 'var(--space-3)',
+              }}
+            >
               {user.username}
             </span>
             <button
               type="button"
               onClick={() => {
-                closeDrawer()
-                handleLogout()
+                closeDrawer();
+                handleLogout();
               }}
               style={{
                 padding: 'var(--space-3)',
@@ -179,5 +193,5 @@ export default function AppLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

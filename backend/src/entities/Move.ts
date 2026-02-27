@@ -6,27 +6,27 @@ import {
   Unique,
   ManyToOne,
   JoinColumn,
-} from "typeorm";
+} from 'typeorm';
 
-@Entity("moves")
-@Unique(["matchId", "position"])
+@Entity('moves')
+@Unique(['matchId', 'position'])
 export class Move {
-  @PrimaryColumn("uuid")
+  @PrimaryColumn('uuid')
   id!: string;
 
-  @Column({ name: "match_id", type: "uuid" })
+  @Column({ name: 'match_id', type: 'uuid' })
   matchId!: string;
 
-  @Column({ name: "player_id", type: "uuid" })
+  @Column({ name: 'player_id', type: 'uuid' })
   playerId!: string;
 
-  @Column({ type: "int" })
+  @Column({ type: 'int' })
   position!: number;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @ManyToOne("Match")
-  @JoinColumn({ name: "match_id" })
-  match?: import("./Match.js").Match;
+  @ManyToOne('Match')
+  @JoinColumn({ name: 'match_id' })
+  match?: import('./Match.js').Match;
 }

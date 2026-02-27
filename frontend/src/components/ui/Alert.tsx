@@ -1,11 +1,11 @@
-import type { HTMLAttributes } from 'react'
+import type { HTMLAttributes } from 'react';
 
-type Variant = 'error' | 'warning' | 'info'
+type Variant = 'error' | 'warning' | 'info';
 
 type AlertProps = HTMLAttributes<HTMLDivElement> & {
-  variant?: Variant
-  children: React.ReactNode
-}
+  variant?: Variant;
+  children: React.ReactNode;
+};
 
 const variantStyles: Record<Variant, React.CSSProperties> = {
   error: {
@@ -20,7 +20,7 @@ const variantStyles: Record<Variant, React.CSSProperties> = {
     borderColor: 'var(--accent)',
     color: 'var(--accent)',
   },
-}
+};
 
 export default function Alert({ variant = 'error', children, style, ...props }: AlertProps) {
   return (
@@ -39,5 +39,5 @@ export default function Alert({ variant = 'error', children, style, ...props }: 
     >
       {children}
     </div>
-  )
+  );
 }

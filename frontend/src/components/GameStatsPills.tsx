@@ -1,19 +1,24 @@
 type GameStatsPillsProps = {
-  wins: number
-  losses: number
-  draws: number
+  wins: number;
+  losses: number;
+  draws: number;
   /** Se true, usa layout compacto (ex.: lista de amigos) */
-  compact?: boolean
-}
+  compact?: boolean;
+};
 
-export default function GameStatsPills({ wins, losses, draws, compact = false }: GameStatsPillsProps) {
+export default function GameStatsPills({
+  wins,
+  losses,
+  draws,
+  compact = false,
+}: GameStatsPillsProps) {
   const pillBase = {
     background: 'var(--bg-elevated)',
     borderRadius: 'var(--radius-md)',
     padding: compact ? 'var(--space-1) var(--space-2)' : 'var(--space-2) var(--space-3)',
     minWidth: compact ? undefined : 72,
     textAlign: 'center' as const,
-  }
+  };
 
   const pills = [
     {
@@ -34,10 +39,10 @@ export default function GameStatsPills({ wins, losses, draws, compact = false }:
       borderColor: 'var(--border)',
       color: 'var(--text-muted)',
     },
-  ]
+  ];
 
-  const labelSize = compact ? 'var(--size-xs)' : 'var(--size-sm)'
-  const valueSize = compact ? 'var(--size-sm)' : 'var(--size-base)'
+  const labelSize = compact ? 'var(--size-xs)' : 'var(--size-sm)';
+  const valueSize = compact ? 'var(--size-sm)' : 'var(--size-base)';
 
   return (
     <div
@@ -81,5 +86,5 @@ export default function GameStatsPills({ wins, losses, draws, compact = false }:
         </div>
       ))}
     </div>
-  )
+  );
 }

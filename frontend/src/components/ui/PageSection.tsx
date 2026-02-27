@@ -1,8 +1,8 @@
-import type { HTMLAttributes } from 'react'
+import type { HTMLAttributes } from 'react';
 
 type PageSectionProps = HTMLAttributes<HTMLElement> & {
-  title: string
-}
+  title: string;
+};
 
 export default function PageSection({ title, children, style, ...props }: PageSectionProps) {
   return (
@@ -25,5 +25,5 @@ export default function PageSection({ title, children, style, ...props }: PageSe
       </h2>
       {children}
     </section>
-  )
+  );
 }

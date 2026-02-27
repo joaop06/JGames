@@ -1,4 +1,4 @@
-import { NavLink as RouterNavLink, type NavLinkProps } from 'react-router-dom'
+import { NavLink as RouterNavLink, type NavLinkProps } from 'react-router-dom';
 
 export default function NavLink(props: NavLinkProps) {
   return (
@@ -13,5 +13,5 @@ export default function NavLink(props: NavLinkProps) {
       })}
       {...props}
     />
-  )
+  );
 }

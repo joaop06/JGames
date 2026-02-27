@@ -3,5 +3,8 @@
  * Same rule as backend for consistency.
  */
 export function normalizeUsername(value: string): string {
-  return value.replace(/\s/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  return value
+    .replace(/\s/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
 }

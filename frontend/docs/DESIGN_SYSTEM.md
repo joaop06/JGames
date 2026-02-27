@@ -25,62 +25,62 @@ Definidos em `src/index.css` na `:root`.
 
 ### Cores (paleta JGames — neon / retro-futurista)
 
-| Variável | Uso |
-|----------|-----|
-| `--bg-page` | Fundo principal (escuro) |
-| `--bg-card` | Fundo de cards, listas e painéis |
-| `--bg-elevated` | Fundo de elementos elevados (inputs, áreas sobrepostas) |
-| `--text-primary` | Texto principal |
-| `--text-muted` | Texto secundário, hints |
-| `--accent` | Azul neon — links, destaques, bordas de foco |
-| `--accent-hover` | Estado hover do accent |
-| `--accent-purple` | Roxo — gradientes e destaques secundários |
-| `--accent-pink` | Rosa/magenta — destaques opcionais |
-| `--success` | Ações positivas (ex.: aceitar convite) |
-| `--success-hover` | Hover em botões de sucesso |
-| `--danger` | Erros, ações destrutivas (ex.: rejeitar) |
-| `--danger-hover` | Hover em botões de perigo |
-| `--border` | Bordas neutras |
-| `--glow` | Brilho neon (sombra) em cards/destaques |
-| `--glow-purple` | Brilho roxo opcional |
-| `--gradient-accent` | Gradiente accent → roxo (botões primary) |
-| `--gradient-hero` | Gradiente sutil para hero/header |
+| Variável            | Uso                                                     |
+| ------------------- | ------------------------------------------------------- |
+| `--bg-page`         | Fundo principal (escuro)                                |
+| `--bg-card`         | Fundo de cards, listas e painéis                        |
+| `--bg-elevated`     | Fundo de elementos elevados (inputs, áreas sobrepostas) |
+| `--text-primary`    | Texto principal                                         |
+| `--text-muted`      | Texto secundário, hints                                 |
+| `--accent`          | Azul neon — links, destaques, bordas de foco            |
+| `--accent-hover`    | Estado hover do accent                                  |
+| `--accent-purple`   | Roxo — gradientes e destaques secundários               |
+| `--accent-pink`     | Rosa/magenta — destaques opcionais                      |
+| `--success`         | Ações positivas (ex.: aceitar convite)                  |
+| `--success-hover`   | Hover em botões de sucesso                              |
+| `--danger`          | Erros, ações destrutivas (ex.: rejeitar)                |
+| `--danger-hover`    | Hover em botões de perigo                               |
+| `--border`          | Bordas neutras                                          |
+| `--glow`            | Brilho neon (sombra) em cards/destaques                 |
+| `--glow-purple`     | Brilho roxo opcional                                    |
+| `--gradient-accent` | Gradiente accent → roxo (botões primary)                |
+| `--gradient-hero`   | Gradiente sutil para hero/header                        |
 
 ### Tipografia
 
-| Variável | Uso |
-|----------|-----|
-| `--font-display` | Títulos e marca (ex.: Orbitron) |
-| `--font-body` | Corpo de texto |
-| `--size-xs` a `--size-2xl` | Tamanhos de fonte |
-| `--weight-normal`, `--weight-bold` | Pesos de fonte |
+| Variável                           | Uso                             |
+| ---------------------------------- | ------------------------------- |
+| `--font-display`                   | Títulos e marca (ex.: Orbitron) |
+| `--font-body`                      | Corpo de texto                  |
+| `--size-xs` a `--size-2xl`         | Tamanhos de fonte               |
+| `--weight-normal`, `--weight-bold` | Pesos de fonte                  |
 
 ### Espaçamento
 
-| Variável | Valor típico | Uso |
-|----------|--------------|-----|
-| `--space-1` | 4px | Margens/paddings mínimos |
-| `--space-2` | 8px | Entre elementos próximos |
-| `--space-3` | 12px | Padding interno de componentes |
-| `--space-4` | 16px | Entre blocos pequenos |
-| `--space-5` | 24px | Entre seções ou padding de card |
-| `--space-6` | 32px | Entre seções maiores |
-| `--space-7` | 48px | Espaçamento generoso |
-| `--space-8` | 64px | Margens largas (ex.: toasts) |
+| Variável    | Valor típico | Uso                             |
+| ----------- | ------------ | ------------------------------- |
+| `--space-1` | 4px          | Margens/paddings mínimos        |
+| `--space-2` | 8px          | Entre elementos próximos        |
+| `--space-3` | 12px         | Padding interno de componentes  |
+| `--space-4` | 16px         | Entre blocos pequenos           |
+| `--space-5` | 24px         | Entre seções ou padding de card |
+| `--space-6` | 32px         | Entre seções maiores            |
+| `--space-7` | 48px         | Espaçamento generoso            |
+| `--space-8` | 64px         | Margens largas (ex.: toasts)    |
 
 ### Raios e sombras
 
-| Variável | Uso |
-|----------|-----|
-| `--radius-sm` | Bordas levemente arredondadas (6px) |
-| `--radius-md` | Botões, inputs (8px) |
-| `--radius-lg` | Elementos maiores (12px) |
-| `--radius-card` | Cards e painéis (16px) |
-| `--shadow-card` | Sombra padrão de cards |
-| `--shadow-glow` | Brilho neon opcional |
-| `--shadow-glow-strong` | Brilho neon intenso |
-| `--transition-fast` | 150ms — hover, focus |
-| `--transition-normal` | 200ms — transições de layout |
+| Variável               | Uso                                 |
+| ---------------------- | ----------------------------------- |
+| `--radius-sm`          | Bordas levemente arredondadas (6px) |
+| `--radius-md`          | Botões, inputs (8px)                |
+| `--radius-lg`          | Elementos maiores (12px)            |
+| `--radius-card`        | Cards e painéis (16px)              |
+| `--shadow-card`        | Sombra padrão de cards              |
+| `--shadow-glow`        | Brilho neon opcional                |
+| `--shadow-glow-strong` | Brilho neon intenso                 |
+| `--transition-fast`    | 150ms — hover, focus                |
+| `--transition-normal`  | 200ms — transições de layout        |
 
 ---
 
@@ -221,13 +221,13 @@ Exemplo:
 
 ## 5. Páginas e rotas
 
-| Rota | Página | Layout | Pública |
-|------|--------|--------|---------|
-| `/login` | Login | Não | Sim |
-| `/register` | Register | Não | Sim |
-| `/` | Home | Sim | Não |
-| `/profile` | Profile | Sim | Não |
-| `/friends` | Friends | Sim | Não |
+| Rota        | Página   | Layout | Pública |
+| ----------- | -------- | ------ | ------- |
+| `/login`    | Login    | Não    | Sim     |
+| `/register` | Register | Não    | Sim     |
+| `/`         | Home     | Sim    | Não     |
+| `/profile`  | Profile  | Sim    | Não     |
+| `/friends`  | Friends  | Sim    | Não     |
 
 - **Título de página:** um único `h1` por página, com `fontFamily: 'var(--font-display)'` e margem inferior consistente.
 - **Seções:** `h2` com fonte display (via `PageSection` ou estilo equivalente).
@@ -272,4 +272,4 @@ Exemplo:
 
 ---
 
-*Última atualização: marca JGames, logo, tokens neon/retro-futurista, layout mobile-first.*
+_Última atualização: marca JGames, logo, tokens neon/retro-futurista, layout mobile-first._

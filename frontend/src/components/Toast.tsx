@@ -1,5 +1,5 @@
-import { useRealtime } from '../context/RealtimeContext'
-import { Button } from './ui'
+import { useRealtime } from '../context/RealtimeContext';
+import { Button } from './ui';
 
 const TOAST_STYLE: React.CSSProperties = {
   position: 'fixed',
@@ -19,20 +19,20 @@ const TOAST_STYLE: React.CSSProperties = {
   gap: 'var(--space-3)',
   alignItems: 'center',
   textAlign: 'center',
-}
+};
 
 export default function Toast() {
-  const { toast, hideToast } = useRealtime()
-  if (!toast) return null
+  const { toast, hideToast } = useRealtime();
+  if (!toast) return null;
 
   const handleAccept = () => {
-    toast.onAccept?.()
-    hideToast()
-  }
+    toast.onAccept?.();
+    hideToast();
+  };
   const handleCancel = () => {
-    toast.onCancel?.()
-    hideToast()
-  }
+    toast.onCancel?.();
+    hideToast();
+  };
 
   return (
     <div role="alert" style={TOAST_STYLE} aria-live="polite">
@@ -96,5 +96,5 @@ export default function Toast() {
         </>
       )}
     </div>
-  )
+  );
 }

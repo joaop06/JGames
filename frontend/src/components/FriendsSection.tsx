@@ -1,153 +1,166 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { api } from '../api/client'
-import { useRealtime } from '../context/RealtimeContext'
-import { useUsernameCheck } from '../hooks/useUsernameCheck'
-import { normalizeUsername } from '../utils/username'
-import { Alert, Button, Card, Input, PageSection } from './ui'
-import GameStatsPills from './GameStatsPills'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../api/client';
+import { useRealtime } from '../context/RealtimeContext';
+import { useUsernameCheck } from '../hooks/useUsernameCheck';
+import { normalizeUsername } from '../utils/username';
+import { Alert, Button, Card, Input, PageSection } from './ui';
+import GameStatsPills from './GameStatsPills';
 
-type Friend = { id: string; username: string; createdAt: string }
-type Invite = { id: string; fromUser: { id: string; username: string }; createdAt: string }
+type Friend = { id: string; username: string; createdAt: string };
+type Invite = { id: string; fromUser: { id: string; username: string }; createdAt: string };
 
 export default function FriendsSection() {
-  const navigate = useNavigate()
-  const { subscribe, showToast } = useRealtime()
-  const [friends, setFriends] = useState<Friend[]>([])
-  const [invites, setInvites] = useState<Invite[]>([])
-  const [inviteUsername, setInviteUsername] = useState('')
-  const [error, setError] = useState('')
-  const [challengeError, setChallengeError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [loadingInvite, setLoadingInvite] = useState(false)
-  const [challengingId, setChallengingId] = useState<string | null>(null)
-  const [removingId, setRemovingId] = useState<string | null>(null)
-  const [vsStats, setVsStats] = useState<Record<string, { wins: number; losses: number; draws: number }>>({})
-  const { exists: inviteUsernameExists } = useUsernameCheck(inviteUsername)
+  const navigate = useNavigate();
+  const { subscribe, showToast } = useRealtime();
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [inviteUsername, setInviteUsername] = useState('');
+  const [error, setError] = useState('');
+  const [challengeError, setChallengeError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingInvite, setLoadingInvite] = useState(false);
+  const [challengingId, setChallengingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [vsStats, setVsStats] = useState<
+    Record<string, { wins: number; losses: number; draws: number }>
+  >({});
+  const { exists: inviteUsernameExists } = useUsernameCheck(inviteUsername);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     async function load() {
       try {
-        const [friendsRes, invitesRes] = await Promise.all([
-          api.getFriends(),
-          api.getInvites(),
-        ])
+        const [friendsRes, invitesRes] = await Promise.all([api.getFriends(), api.getInvites()]);
         if (!cancelled) {
-          setFriends(friendsRes.friends)
-          setInvites(invitesRes.invites)
+          setFriends(friendsRes.friends);
+          setInvites(invitesRes.invites);
         }
       } catch {
-        if (!cancelled) setFriends([])
+        if (!cancelled) setFriends([]);
       }
     }
-    load()
-    return () => { cancelled = true }
-  }, [])
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     return subscribe((msg) => {
       if (msg.type === 'friend_invite') {
-        api.getInvites().then((res) => setInvites(res.invites)).catch(() => {})
+        api
+          .getInvites()
+          .then((res) => setInvites(res.invites))
+          .catch(() => {});
       }
       if (msg.type === 'friend_accepted') {
-        api.getFriends().then((res) => setFriends(res.friends)).catch(() => {})
+        api
+          .getFriends()
+          .then((res) => setFriends(res.friends))
+          .catch(() => {});
       }
       if (msg.type === 'friend_removed') {
-        setFriends((prev) => prev.filter((f) => f.id !== msg.friendId))
+        setFriends((prev) => prev.filter((f) => f.id !== msg.friendId));
       }
-    })
-  }, [subscribe])
+    });
+  }, [subscribe]);
 
   useEffect(() => {
-    if (friends.length === 0) return
-    const abort = new AbortController()
+    if (friends.length === 0) return;
+    const abort = new AbortController();
     friends.forEach((f) => {
       api.getTicTacToeStatsVsFriend(f.id).then(
         (res) => setVsStats((prev) => ({ ...prev, [f.id]: res.stats })),
         () => {}
-      )
-    })
-    return () => abort.abort()
-  }, [friends])
+      );
+    });
+    return () => abort.abort();
+  }, [friends]);
 
   async function handleSendInvite(e: React.FormEvent) {
-    e.preventDefault()
-    if (!inviteUsername) return
-    setError('')
-    setLoadingInvite(true)
+    e.preventDefault();
+    if (!inviteUsername) return;
+    setError('');
+    setLoadingInvite(true);
     try {
-      await api.inviteFriend(inviteUsername)
-      setInviteUsername('')
+      await api.inviteFriend(inviteUsername);
+      setInviteUsername('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao enviar convite')
+      setError(err instanceof Error ? err.message : 'Erro ao enviar convite');
     } finally {
-      setLoadingInvite(false)
+      setLoadingInvite(false);
     }
   }
 
   async function accept(id: string) {
-    setLoading(true)
+    setLoading(true);
     try {
-      await api.acceptInvite(id)
-      setInvites((prev) => prev.filter((i) => i.id !== id))
-      const res = await api.getFriends()
-      setFriends(res.friends)
+      await api.acceptInvite(id);
+      setInvites((prev) => prev.filter((i) => i.id !== id));
+      const res = await api.getFriends();
+      setFriends(res.friends);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function reject(id: string) {
-    setLoading(true)
+    setLoading(true);
     try {
-      await api.rejectInvite(id)
-      setInvites((prev) => prev.filter((i) => i.id !== id))
+      await api.rejectInvite(id);
+      setInvites((prev) => prev.filter((i) => i.id !== id));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleRemoveFriend(friendId: string) {
-    setRemovingId(friendId)
-    setError('')
+    setRemovingId(friendId);
+    setError('');
     try {
-      await api.removeFriend(friendId)
-      setFriends((prev) => prev.filter((f) => f.id !== friendId))
+      await api.removeFriend(friendId);
+      setFriends((prev) => prev.filter((f) => f.id !== friendId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao remover amigo')
+      setError(err instanceof Error ? err.message : 'Erro ao remover amigo');
     } finally {
-      setRemovingId(null)
+      setRemovingId(null);
     }
   }
 
   async function challengeFriend(friendId: string) {
-    if (!friendId || typeof friendId !== 'string' || !friendId.trim()) return
-    setChallengingId(friendId)
-    setChallengeError('')
+    if (!friendId || typeof friendId !== 'string' || !friendId.trim()) return;
+    setChallengingId(friendId);
+    setChallengeError('');
     try {
-      const res = await api.createTicTacToeMatch(friendId)
+      const res = await api.createTicTacToeMatch(friendId);
       if (res.opponentBusy) {
-        const friend = friends.find((f) => f.id === friendId)
+        const friend = friends.find((f) => f.id === friendId);
         showToast({
           type: 'game_invite_opponent_busy',
           username: friend?.username ?? 'Oponente',
-        })
-        return
+        });
+        return;
       }
       if (res.match) {
-        navigate(`/games/tic-tac-toe/match/${res.match.id}`)
+        navigate(`/games/tic-tac-toe/match/${res.match.id}`);
       }
     } catch (err) {
-      setChallengeError(err instanceof Error ? err.message : 'Erro ao desafiar')
+      setChallengeError(err instanceof Error ? err.message : 'Erro ao desafiar');
     } finally {
-      setChallengingId(null)
+      setChallengingId(null);
     }
   }
 
   return (
     <section style={{ marginTop: 'var(--space-6)' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--size-lg)', marginBottom: 'var(--space-5)' }}>
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--size-lg)',
+          marginBottom: 'var(--space-5)',
+        }}
+      >
         Amigos
       </h2>
 
@@ -173,12 +186,24 @@ export default function FriendsSection() {
           </Button>
         </form>
         {inviteUsername.length >= 2 && inviteUsernameExists === true && (
-          <p style={{ color: 'var(--success)', fontSize: 'var(--size-sm)', marginTop: 'var(--space-2)' }}>
+          <p
+            style={{
+              color: 'var(--success)',
+              fontSize: 'var(--size-sm)',
+              marginTop: 'var(--space-2)',
+            }}
+          >
             Usuário encontrado. Pode enviar o convite.
           </p>
         )}
         {inviteUsername.length >= 2 && inviteUsernameExists === false && (
-          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--size-sm)', marginTop: 'var(--space-2)' }}>
+          <p
+            style={{
+              color: 'var(--text-muted)',
+              fontSize: 'var(--size-sm)',
+              marginTop: 'var(--space-2)',
+            }}
+          >
             Nome de usuário não encontrado.
           </p>
         )}
@@ -315,5 +340,5 @@ export default function FriendsSection() {
         )}
       </PageSection>
     </section>
-  )
+  );
 }

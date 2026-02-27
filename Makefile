@@ -4,6 +4,7 @@
 .PHONY: help setup up down build reload deploy dev dev-down dev-build logs shell-backend shell-db \
 	backend-install backend-dev backend-build \
 	frontend-install frontend-dev frontend-build frontend-preview \
+	lint format format-check check \
 	clean
 
 # Default: mostra ajuda
@@ -33,6 +34,9 @@ help:
 	@echo "    make frontend-dev     - Inicia Vite em modo dev"
 	@echo "    make frontend-build   - Build de produção"
 	@echo "    make frontend-preview - Preview do build"
+	@echo ""
+	@echo "  Lint / formatação (roda em backend + frontend):"
+	@echo "    make lint         - ESLint e formatação (Prettier) em ambos os projetos"
 	@echo ""
 	@echo "  Outros:"
 	@echo "    make setup  - Cria .env a partir de .env.example (se não existir)"
@@ -106,6 +110,11 @@ frontend-build:
 
 frontend-preview:
 	cd frontend && npm run preview
+
+# --- Lint e formatação (backend + frontend) ---
+lint:
+	cd backend && npm run lint && npm run format
+	cd frontend && npm run lint && npm run format
 
 # --- Limpeza ---
 clean:

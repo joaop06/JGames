@@ -1,4 +1,4 @@
-import { AppDataSource, initDataSource } from "./typeorm.js";
+import { AppDataSource, initDataSource } from './typeorm.js';
 
 export { AppDataSource, initDataSource };
 

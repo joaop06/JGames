@@ -1,15 +1,15 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { Alert, Button, Card, Input } from '../components/ui'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Alert, Button, Card, Input } from '../components/ui';
 
 export default function Login() {
-  const [identifier, setIdentifier] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const { login, user, loading } = useAuth()
-  const navigate = useNavigate()
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const { login, user, loading } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -24,25 +24,25 @@ export default function Login() {
       >
         <p style={{ color: 'var(--text-muted)' }}>Verificando sessão...</p>
       </div>
-    )
+    );
   }
 
   if (user) {
-    navigate('/', { replace: true })
-    return null
+    navigate('/', { replace: true });
+    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSubmitting(true)
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
     try {
-      await login(identifier, password)
-      navigate('/', { replace: true })
+      await login(identifier, password);
+      navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao entrar')
+      setError(err instanceof Error ? err.message : 'Erro ao entrar');
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -110,5 +110,5 @@ export default function Login() {
         </p>
       </Card>
     </div>
-  )
+  );
 }

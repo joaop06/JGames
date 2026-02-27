@@ -6,31 +6,31 @@ import {
   Unique,
   ManyToOne,
   JoinColumn,
-} from "typeorm";
+} from 'typeorm';
 
-@Entity("friend_invites")
-@Unique(["fromUserId", "toUserId"])
+@Entity('friend_invites')
+@Unique(['fromUserId', 'toUserId'])
 export class FriendInvite {
-  @PrimaryColumn("uuid")
+  @PrimaryColumn('uuid')
   id!: string;
 
-  @Column({ name: "from_user_id", type: "uuid" })
+  @Column({ name: 'from_user_id', type: 'uuid' })
   fromUserId!: string;
 
-  @Column({ name: "to_user_id", type: "uuid" })
+  @Column({ name: 'to_user_id', type: 'uuid' })
   toUserId!: string;
 
-  @Column({ type: "varchar", default: "pending" })
+  @Column({ type: 'varchar', default: 'pending' })
   status!: string;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @ManyToOne("User")
-  @JoinColumn({ name: "from_user_id" })
-  fromUser?: import("./User.js").User;
+  @ManyToOne('User')
+  @JoinColumn({ name: 'from_user_id' })
+  fromUser?: import('./User.js').User;
 
-  @ManyToOne("User")
-  @JoinColumn({ name: "to_user_id" })
-  toUser?: import("./User.js").User;
+  @ManyToOne('User')
+  @JoinColumn({ name: 'to_user_id' })
+  toUser?: import('./User.js').User;
 }

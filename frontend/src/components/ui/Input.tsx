@@ -1,12 +1,12 @@
-import type { InputHTMLAttributes } from 'react'
+import type { InputHTMLAttributes } from 'react';
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
-  label: string
-  error?: string
-}
+  label: string;
+  error?: string;
+};
 
 export default function Input({ label, error, id, style, ...props }: InputProps) {
-  const inputId = id ?? `input-${label.replace(/\s/g, '-').toLowerCase()}`
+  const inputId = id ?? `input-${label.replace(/\s/g, '-').toLowerCase()}`;
   return (
     <div style={{ marginBottom: 'var(--space-4)' }}>
       <label
@@ -50,5 +50,5 @@ export default function Input({ label, error, id, style, ...props }: InputProps)
         </p>
       )}
     </div>
-  )
+  );
 }

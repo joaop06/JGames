@@ -1,25 +1,25 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useRealtime } from '../context/RealtimeContext'
-import { api } from '../api/client'
-import { Button } from './ui'
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRealtime } from '../context/RealtimeContext';
+import { api } from '../api/client';
+import { Button } from './ui';
 
 type NotificationItem = {
-  id: string
-  type: string
-  read: boolean
-  createdAt: string
+  id: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
   friendInvite: {
-    id: string
-    status: string
-    fromUser: { id: string; username: string }
-  } | null
+    id: string;
+    status: string;
+    fromUser: { id: string; username: string };
+  } | null;
   gameInvite: {
-    matchId: string
-    fromUser?: { id: string; username: string }
-    gameType: string
-  } | null
-}
+    matchId: string;
+    fromUser?: { id: string; username: string };
+    gameType: string;
+  } | null;
+};
 
 const BELL_STYLE: React.CSSProperties = {
   position: 'relative',
@@ -37,7 +37,7 @@ const BELL_STYLE: React.CSSProperties = {
   cursor: 'pointer',
   lineHeight: 1,
   transition: 'color var(--transition-fast)',
-}
+};
 
 function NotificationIcon({ className }: { className?: string }) {
   return (
@@ -56,7 +56,7 @@ function NotificationIcon({ className }: { className?: string }) {
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
-  )
+  );
 }
 const PANEL_STYLE: React.CSSProperties = {
   position: 'absolute',
@@ -73,12 +73,12 @@ const PANEL_STYLE: React.CSSProperties = {
   boxShadow: 'var(--shadow-card)',
   zIndex: 1000,
   padding: 'var(--space-2)',
-}
+};
 const ITEM_STYLE: React.CSSProperties = {
   padding: 'var(--space-3)',
   borderBottom: '1px solid var(--border)',
   fontSize: 'var(--size-sm)',
-}
+};
 const BADGE_STYLE: React.CSSProperties = {
   position: 'absolute',
   top: 2,
@@ -93,93 +93,92 @@ const BADGE_STYLE: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-}
+};
 
 export default function NotificationPanel() {
-  const navigate = useNavigate()
-  const { unreadCount, setUnreadCount } = useRealtime()
-  const [open, setOpen] = useState(false)
-  const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate();
+  const { unreadCount, setUnreadCount } = useRealtime();
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const res = await api.getNotifications()
-      const seen = new Set<string>()
+      const res = await api.getNotifications();
+      const seen = new Set<string>();
       const deduped = res.notifications.filter((n: NotificationItem) => {
-        const key = n.gameInvite?.matchId ?? n.friendInvite?.id ?? n.id
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
-      setNotifications(deduped)
+        const key = n.gameInvite?.matchId ?? n.friendInvite?.id ?? n.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setNotifications(deduped);
     } catch {
-      setNotifications([])
+      setNotifications([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (open) {
-      setUnreadCount(0)
-      fetchNotifications()
+      setUnreadCount(0);
+      fetchNotifications();
     }
-  }, [open, setUnreadCount])
+  }, [open, setUnreadCount]);
 
   useEffect(() => {
-    api.getNotifications().then((res) => {
-      const seen = new Set<string>()
-      const deduped = res.notifications.filter((n: NotificationItem) => {
-        const key = n.gameInvite?.matchId ?? n.friendInvite?.id ?? n.id
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
+    api
+      .getNotifications()
+      .then((res) => {
+        const seen = new Set<string>();
+        const deduped = res.notifications.filter((n: NotificationItem) => {
+          const key = n.gameInvite?.matchId ?? n.friendInvite?.id ?? n.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        const count = deduped.filter((n: NotificationItem) => !n.read).length;
+        setUnreadCount(count);
       })
-      const count = deduped.filter((n: NotificationItem) => !n.read).length
-      setUnreadCount(count)
-    }).catch(() => {})
-  }, [setUnreadCount])
+      .catch(() => {});
+  }, [setUnreadCount]);
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
     function handleClickOutside(e: MouseEvent) {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false)
+        setOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
 
   const handleAccept = async (inviteId: string, notificationId: string) => {
     try {
-      await api.acceptInvite(inviteId)
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== notificationId)
-      )
+      await api.acceptInvite(inviteId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     } catch {}
-  }
+  };
 
   const handleReject = async (inviteId: string, notificationId: string) => {
     try {
-      await api.rejectInvite(inviteId)
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== notificationId)
-      )
+      await api.rejectInvite(inviteId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     } catch {}
-  }
+  };
 
   const handleAcceptGameInvite = async (matchId: string, notificationId: string) => {
     try {
-      await api.joinTicTacToeMatch(matchId)
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
-      setOpen(false)
-      navigate(`/games/tic-tac-toe/match/${matchId}`)
+      await api.joinTicTacToeMatch(matchId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      setOpen(false);
+      navigate(`/games/tic-tac-toe/match/${matchId}`);
     } catch {}
-  }
+  };
 
   return (
     <div ref={panelRef} style={{ position: 'relative' }}>
@@ -189,46 +188,36 @@ export default function NotificationPanel() {
         style={BELL_STYLE}
         onClick={() => setOpen((o) => !o)}
         onMouseOver={(e) => {
-          e.currentTarget.style.color = 'var(--accent)'
+          e.currentTarget.style.color = 'var(--accent)';
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.color = 'var(--text-muted)'
+          e.currentTarget.style.color = 'var(--text-muted)';
         }}
       >
         <NotificationIcon />
         {unreadCount > 0 && (
-          <span style={BADGE_STYLE}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <span style={BADGE_STYLE}>{unreadCount > 99 ? '99+' : unreadCount}</span>
         )}
       </button>
       {open && (
         <div style={PANEL_STYLE}>
-          <div style={{ padding: 'var(--space-2)', fontWeight: 700 }}>
-            Notificações
-          </div>
+          <div style={{ padding: 'var(--space-2)', fontWeight: 700 }}>Notificações</div>
           {loading ? (
-            <div style={{ ...ITEM_STYLE, color: 'var(--text-muted)' }}>
-              Carregando...
-            </div>
+            <div style={{ ...ITEM_STYLE, color: 'var(--text-muted)' }}>Carregando...</div>
           ) : notifications.length === 0 ? (
-            <div style={{ ...ITEM_STYLE, color: 'var(--text-muted)' }}>
-              Nenhuma notificação
-            </div>
+            <div style={{ ...ITEM_STYLE, color: 'var(--text-muted)' }}>Nenhuma notificação</div>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {notifications.map((n) => {
-                const inv = n.friendInvite
-                const gameInv = n.gameInvite
+                const inv = n.friendInvite;
+                const gameInv = n.gameInvite;
                 return (
                   <li key={n.id} style={ITEM_STYLE}>
                     {n.type === 'friend_invite' && inv && (
                       <>
                         <span style={{ color: 'var(--text-primary)' }}>
                           {inv.fromUser.username}
-                          {inv.status === 'pending'
-                            ? ' enviou convite de amizade'
-                            : ' — Amigos'}
+                          {inv.status === 'pending' ? ' enviou convite de amizade' : ' — Amigos'}
                         </span>
                         {inv.status === 'pending' && (
                           <div
@@ -279,12 +268,12 @@ export default function NotificationPanel() {
                       </>
                     )}
                   </li>
-                )
+                );
               })}
             </ul>
           )}
         </div>
       )}
     </div>
-  )
+  );
 }

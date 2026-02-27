@@ -1,18 +1,18 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { useUsernameCheck } from '../hooks/useUsernameCheck'
-import { normalizeUsername } from '../utils/username'
-import { Alert, Button, Card, Input } from '../components/ui'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useUsernameCheck } from '../hooks/useUsernameCheck';
+import { normalizeUsername } from '../utils/username';
+import { Alert, Button, Card, Input } from '../components/ui';
 
 export default function Register() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const { register, user, loading } = useAuth()
-  const navigate = useNavigate()
-  const { exists: usernameExists } = useUsernameCheck(username)
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const { register, user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { exists: usernameExists } = useUsernameCheck(username);
 
   if (loading) {
     return (
@@ -27,25 +27,25 @@ export default function Register() {
       >
         <p style={{ color: 'var(--text-muted)' }}>Verificando sessão...</p>
       </div>
-    )
+    );
   }
 
   if (user) {
-    navigate('/', { replace: true })
-    return null
+    navigate('/', { replace: true });
+    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setSubmitting(true)
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
     try {
-      await register(username, password.trim())
-      navigate('/', { replace: true })
+      await register(username, password.trim());
+      navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar')
+      setError(err instanceof Error ? err.message : 'Erro ao cadastrar');
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -128,5 +128,5 @@ export default function Register() {
         </p>
       </Card>
     </div>
-  )
+  );
 }

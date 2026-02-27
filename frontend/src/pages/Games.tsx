@@ -1,12 +1,10 @@
-import { Link } from 'react-router-dom'
-import { Card } from '../components/ui'
+import { Link } from 'react-router-dom';
+import { Card } from '../components/ui';
 
 export default function Games() {
   return (
     <div>
-      <h1 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-4)' }}>
-        Jogos
-      </h1>
+      <h1 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-4)' }}>Jogos</h1>
       <p style={{ marginBottom: 'var(--space-6)', color: 'var(--text-muted)' }}>
         Escolha um jogo para jogar.
       </p>
@@ -19,10 +17,10 @@ export default function Games() {
               height: '100%',
             }}
             onMouseOver={(e: React.MouseEvent<HTMLDivElement>) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-card), 0 0 16px var(--glow)'
+              e.currentTarget.style.boxShadow = 'var(--shadow-card), 0 0 16px var(--glow)';
             }}
             onMouseOut={(e: React.MouseEvent<HTMLDivElement>) => {
-              e.currentTarget.style.boxShadow = 'var(--shadow-card)'
+              e.currentTarget.style.boxShadow = 'var(--shadow-card)';
             }}
           >
             <div
@@ -58,7 +56,15 @@ export default function Games() {
                   <line x1="74" y1="74" x2="88" y2="88" />
                   <line x1="88" y1="74" x2="74" y2="88" />
                 </g>
-                <circle cx="50" cy="50" r="14" fill="none" stroke="var(--glow)" strokeWidth="1" opacity="0.6" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="14"
+                  fill="none"
+                  stroke="var(--glow)"
+                  strokeWidth="1"
+                  opacity="0.6"
+                />
               </svg>
             </div>
             <span style={{ fontSize: 'var(--size-sm)' }}>Jogo da Velha</span>
@@ -66,5 +72,5 @@ export default function Games() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

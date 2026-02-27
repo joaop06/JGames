@@ -1,29 +1,24 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { randomUUID } from "crypto";
-import { AppDataSource, getRepository } from "../lib/db.js";
-import { User } from "../entities/User.js";
-import { FriendInvite } from "../entities/FriendInvite.js";
-import { Friendship } from "../entities/Friendship.js";
-import { Notification } from "../entities/Notification.js";
-import { requireAuth } from "../lib/auth.js";
-import { inviteFriendSchema } from "../lib/validation.js";
-import { sendToUser } from "../ws/handler.js";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { randomUUID } from 'crypto';
+import { AppDataSource, getRepository } from '../lib/db.js';
+import { User } from '../entities/User.js';
+import { FriendInvite } from '../entities/FriendInvite.js';
+import { Friendship } from '../entities/Friendship.js';
+import { Notification } from '../entities/Notification.js';
+import { requireAuth } from '../lib/auth.js';
+import { inviteFriendSchema } from '../lib/validation.js';
+import { sendToUser } from '../ws/handler.js';
 
 async function friendRoutes(fastify: FastifyInstance) {
-  fastify.addHook("preHandler", requireAuth);
+  fastify.addHook('preHandler', requireAuth);
 
-  fastify.get("/api/friends", async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+  fastify.get('/api/friends', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.userId) return reply.status(401).send({ error: 'Unauthorized' });
     const friendships = await getRepository(Friendship).find({
-      where: [
-        { userAId: request.userId },
-        { userBId: request.userId },
-      ],
+      where: [{ userAId: request.userId }, { userBId: request.userId }],
       relations: { userA: true, userB: true },
     });
-    const friends = friendships.map((f) =>
-      f.userAId === request.userId ? f.userB! : f.userA!
-    );
+    const friends = friendships.map((f) => (f.userAId === request.userId ? f.userB! : f.userA!));
     return reply.send({
       friends: friends.map((u) => ({
         id: u.id,
@@ -33,10 +28,10 @@ async function friendRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get("/api/friends/invites", async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+  fastify.get('/api/friends/invites', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.userId) return reply.status(401).send({ error: 'Unauthorized' });
     const invites = await getRepository(FriendInvite).find({
-      where: { toUserId: request.userId!, status: "pending" },
+      where: { toUserId: request.userId!, status: 'pending' },
       relations: { fromUser: true },
     });
     return reply.send({
@@ -49,16 +44,16 @@ async function friendRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post<{ Body: unknown }>(
-    "/api/friends/invite",
+    '/api/friends/invite',
     async (request: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) => {
-      if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+      if (!request.userId) return reply.status(401).send({ error: 'Unauthorized' });
       const parsed = inviteFriendSchema.safeParse(request.body ?? {});
       if (!parsed.success) {
         const flattened = parsed.error.flatten();
         const firstFieldError =
           Object.values(flattened.fieldErrors).flat().find(Boolean) ?? flattened.formErrors[0];
         const errorMessage =
-          typeof firstFieldError === "string" ? firstFieldError : "Validation failed";
+          typeof firstFieldError === 'string' ? firstFieldError : 'Validation failed';
         return reply.status(400).send({ error: errorMessage, details: flattened });
       }
       const { username, userId: targetUserId } = parsed.data;
@@ -68,14 +63,14 @@ async function friendRoutes(fastify: FastifyInstance) {
       } else if (username) {
         const user = await getRepository(User).findOne({ where: { username } });
         if (!user) {
-          return reply.status(404).send({ error: "User not found" });
+          return reply.status(404).send({ error: 'User not found' });
         }
         toUserId = user.id;
       } else {
-        return reply.status(400).send({ error: "Provide username or userId" });
+        return reply.status(400).send({ error: 'Provide username or userId' });
       }
       if (toUserId === request.userId) {
-        return reply.status(400).send({ error: "Cannot invite yourself" });
+        return reply.status(400).send({ error: 'Cannot invite yourself' });
       }
       const friendshipRepo = getRepository(Friendship);
       const existingFriendship = await friendshipRepo.findOne({
@@ -85,20 +80,20 @@ async function friendRoutes(fastify: FastifyInstance) {
         ],
       });
       if (existingFriendship) {
-        return reply.status(409).send({ error: "Already friends" });
+        return reply.status(409).send({ error: 'Already friends' });
       }
       const inviteRepo = getRepository(FriendInvite);
       const existingInvite = await inviteRepo.findOne({
         where: { fromUserId: request.userId!, toUserId },
       });
       if (existingInvite) {
-        if (existingInvite.status === "pending") {
-          return reply.status(409).send({ error: "Invite already sent" });
+        if (existingInvite.status === 'pending') {
+          return reply.status(409).send({ error: 'Invite already sent' });
         }
       }
       let invite: FriendInvite;
       if (existingInvite) {
-        existingInvite.status = "pending";
+        existingInvite.status = 'pending';
         await inviteRepo.save(existingInvite);
         invite = existingInvite as FriendInvite;
       } else {
@@ -106,7 +101,7 @@ async function friendRoutes(fastify: FastifyInstance) {
           id: randomUUID(),
           fromUserId: request.userId!,
           toUserId,
-          status: "pending",
+          status: 'pending',
           createdAt: new Date(),
         });
         await inviteRepo.save(newInvite);
@@ -123,7 +118,7 @@ async function friendRoutes(fastify: FastifyInstance) {
         const notif = getRepository(Notification).create({
           id: randomUUID(),
           userId: toUserId,
-          type: "friend_invite",
+          type: 'friend_invite',
           friendInviteId: invite.id,
           read: false,
         });
@@ -131,7 +126,7 @@ async function friendRoutes(fastify: FastifyInstance) {
       }
       const fromUser = inviteWithUsers?.fromUser ?? invite.fromUser;
       sendToUser(toUserId, {
-        type: "friend_invite",
+        type: 'friend_invite',
         inviteId: invite.id,
         fromUser: fromUser ? { id: fromUser.id, username: fromUser.username } : undefined,
       });
@@ -148,21 +143,21 @@ async function friendRoutes(fastify: FastifyInstance) {
   );
 
   fastify.post<{ Params: { id: string } }>(
-    "/api/friends/invites/:id/accept",
+    '/api/friends/invites/:id/accept',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+      if (!request.userId) return reply.status(401).send({ error: 'Unauthorized' });
       const invite = await getRepository(FriendInvite).findOne({
         where: { id: request.params.id },
       });
       if (!invite || invite.toUserId !== request.userId) {
-        return reply.status(404).send({ error: "Invite not found" });
+        return reply.status(404).send({ error: 'Invite not found' });
       }
-      if (invite.status !== "pending") {
-        return reply.status(409).send({ error: "Invite already processed" });
+      if (invite.status !== 'pending') {
+        return reply.status(409).send({ error: 'Invite already processed' });
       }
       const [userAId, userBId] = [invite.fromUserId, invite.toUserId].sort();
       await AppDataSource.transaction(async (manager) => {
-        await manager.getRepository(FriendInvite).update({ id: invite.id }, { status: "accepted" });
+        await manager.getRepository(FriendInvite).update({ id: invite.id }, { status: 'accepted' });
         const friendshipRepo = manager.getRepository(Friendship);
         let friendship = await friendshipRepo.findOne({ where: { userAId, userBId } });
         if (!friendship) {
@@ -184,7 +179,7 @@ async function friendRoutes(fastify: FastifyInstance) {
       });
       if (newFriendForInviter) {
         sendToUser(invite.fromUserId, {
-          type: "friend_accepted",
+          type: 'friend_accepted',
           friend: newFriendForInviter,
         });
       }
@@ -193,41 +188,41 @@ async function friendRoutes(fastify: FastifyInstance) {
   );
 
   fastify.post<{ Params: { id: string } }>(
-    "/api/friends/invites/:id/reject",
+    '/api/friends/invites/:id/reject',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+      if (!request.userId) return reply.status(401).send({ error: 'Unauthorized' });
       const invite = await getRepository(FriendInvite).findOne({
         where: { id: request.params.id },
       });
       if (!invite || invite.toUserId !== request.userId) {
-        return reply.status(404).send({ error: "Invite not found" });
+        return reply.status(404).send({ error: 'Invite not found' });
       }
-      if (invite.status !== "pending") {
-        return reply.status(409).send({ error: "Invite already processed" });
+      if (invite.status !== 'pending') {
+        return reply.status(409).send({ error: 'Invite already processed' });
       }
-      await getRepository(FriendInvite).update({ id: invite.id }, { status: "rejected" });
+      await getRepository(FriendInvite).update({ id: invite.id }, { status: 'rejected' });
       return reply.send({ ok: true });
     }
   );
 
   fastify.delete<{ Params: { friendId: string } }>(
-    "/api/friends/:friendId",
+    '/api/friends/:friendId',
     async (request: FastifyRequest<{ Params: { friendId: string } }>, reply: FastifyReply) => {
-      if (!request.userId) return reply.status(401).send({ error: "Unauthorized" });
+      if (!request.userId) return reply.status(401).send({ error: 'Unauthorized' });
       const { friendId } = request.params;
       if (friendId === request.userId) {
-        return reply.status(400).send({ error: "Cannot remove yourself" });
+        return reply.status(400).send({ error: 'Cannot remove yourself' });
       }
       const [userAId, userBId] = [request.userId, friendId].sort();
       const friendship = await getRepository(Friendship).findOne({
         where: { userAId, userBId },
       });
       if (!friendship) {
-        return reply.status(404).send({ error: "Friendship not found" });
+        return reply.status(404).send({ error: 'Friendship not found' });
       }
       await getRepository(Friendship).delete({ userAId, userBId });
-      sendToUser(request.userId, { type: "friend_removed", friendId });
-      sendToUser(friendId, { type: "friend_removed", friendId: request.userId });
+      sendToUser(request.userId, { type: 'friend_removed', friendId });
+      sendToUser(friendId, { type: 'friend_removed', friendId: request.userId });
       return reply.status(204).send();
     }
   );

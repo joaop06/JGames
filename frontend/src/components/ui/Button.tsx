@@ -1,13 +1,13 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'success' | 'danger' | 'ghost'
-type Size = 'sm' | 'md'
+type Variant = 'primary' | 'success' | 'danger' | 'ghost';
+type Size = 'sm' | 'md';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: Variant
-  size?: Size
-  loading?: boolean
-}
+  variant?: Variant;
+  size?: Size;
+  loading?: boolean;
+};
 
 const variantStyles: Record<Variant, React.CSSProperties> = {
   primary: {
@@ -31,12 +31,12 @@ const variantStyles: Record<Variant, React.CSSProperties> = {
     color: 'var(--text-muted)',
     border: '1px solid var(--border)',
   },
-}
+};
 
 const sizeStyles: Record<Size, React.CSSProperties> = {
   sm: { padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--size-sm)' },
   md: { padding: 'var(--space-3) var(--space-4)', fontSize: 'var(--size-base)' },
-}
+};
 
 export default function Button({
   variant = 'primary',
@@ -51,11 +51,12 @@ export default function Button({
     font: 'inherit',
     borderRadius: 'var(--radius-md)',
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
-    transition: 'opacity var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast)',
+    transition:
+      'opacity var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast)',
     opacity: disabled || loading ? 0.7 : 1,
     ...variantStyles[variant],
     ...sizeStyles[size],
-  }
+  };
 
   return (
     <button
@@ -66,5 +67,5 @@ export default function Button({
     >
       {loading ? '...' : children}
     </button>
-  )
+  );
 }
