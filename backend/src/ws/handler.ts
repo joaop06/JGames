@@ -593,7 +593,7 @@ export async function registerWebSocket(server: FastifyInstance) {
           });
           const requestUser = await getRepository(User).findOne({
             where: { id: userId },
-            select: { id: true, username: true },
+            select: { id: true, username: true, name: true },
           });
           sendToUser(userId, {
             type: 'rematch_pending',
@@ -602,7 +602,7 @@ export async function registerWebSocket(server: FastifyInstance) {
           sendToUser(opponentId, {
             type: 'rematch_requested',
             fromUser: requestUser
-              ? { id: requestUser.id, username: requestUser.username }
+              ? { id: requestUser.id, username: requestUser.username, name: requestUser.name }
               : undefined,
             expiresAt,
           });

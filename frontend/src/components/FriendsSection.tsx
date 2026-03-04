@@ -7,8 +7,12 @@ import { normalizeUsername } from '../utils/username';
 import { Alert, Button, Card, Input, PageSection } from './ui';
 import GameStatsPills from './GameStatsPills';
 
-type Friend = { id: string; username: string; createdAt: string };
-type Invite = { id: string; fromUser: { id: string; username: string }; createdAt: string };
+type Friend = { id: string; username: string; name?: string | null; createdAt: string };
+type Invite = {
+  id: string;
+  fromUser: { id: string; username: string; name?: string | null };
+  createdAt: string;
+};
 
 export default function FriendsSection() {
   const navigate = useNavigate();
@@ -138,7 +142,7 @@ export default function FriendsSection() {
         const friend = friends.find((f) => f.id === friendId);
         showToast({
           type: 'game_invite_opponent_busy',
-          username: friend?.username ?? 'Oponente',
+          username: friend?.name || friend?.username || 'Oponente',
         });
         return;
       }
@@ -153,14 +157,8 @@ export default function FriendsSection() {
   }
 
   return (
-    <section style={{ marginTop: 'var(--space-6)' }}>
-      <h2
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'var(--size-lg)',
-          marginBottom: 'var(--space-5)',
-        }}
-      >
+    <section>
+      <h2 className="section-title" style={{ marginBottom: 'var(--space-5)' }}>
         Amigos
       </h2>
 
@@ -231,7 +229,27 @@ export default function FriendsSection() {
                     padding: 'var(--space-3)',
                   }}
                 >
-                  <span>{i.fromUser.username}</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'var(--space-1)',
+                      minWidth: 0,
+                    }}
+                  >
+                    <span>{i.fromUser.name || i.fromUser.username}</span>
+                    {i.fromUser.name && (
+                      <span
+                        style={{
+                          fontSize: 'var(--size-sm)',
+                          color: 'var(--text-muted)',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        @{i.fromUser.username}
+                      </span>
+                    )}
+                  </div>
                   <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                     <Button
                       type="button"
@@ -291,7 +309,18 @@ export default function FriendsSection() {
                       minWidth: 0,
                     }}
                   >
-                    <span>{f.username}</span>
+                    <span>{f.name || f.username}</span>
+                    {f.name && (
+                      <span
+                        style={{
+                          fontSize: 'var(--size-sm)',
+                          color: 'var(--text-muted)',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        @{f.username}
+                      </span>
+                    )}
                     {vsStats[f.id] != null && (
                       <div
                         style={{

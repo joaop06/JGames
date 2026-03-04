@@ -27,10 +27,16 @@ async function authRoutes(fastify: FastifyInstance) {
           details: flattened,
         });
       }
-      const { username, password } = parsed.data;
+      const { username, password, name, email } = parsed.data;
       const existing = await getRepository(User).findOne({ where: { username } });
       if (existing) {
         return reply.status(409).send({ error: 'Username already in use' });
+      }
+      if (email) {
+        const existingEmail = await getRepository(User).findOne({ where: { email } });
+        if (existingEmail) {
+          return reply.status(409).send({ error: 'Email already in use' });
+        }
       }
       const passwordHash = await bcrypt.hash(password, 12);
       const userRepo = getRepository(User);
@@ -39,13 +45,21 @@ async function authRoutes(fastify: FastifyInstance) {
         id: randomUUID(),
         username,
         passwordHash,
+        name,
+        email: email ?? null,
         createdAt: now,
         updatedAt: now,
       });
       await userRepo.save(user);
       setAuthCookies(reply, user.id);
       return reply.status(201).send({
-        user: { id: user.id, username: user.username, createdAt: user.createdAt },
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          email: user.email,
+          createdAt: user.createdAt,
+        },
       });
     }
   );
@@ -76,6 +90,8 @@ async function authRoutes(fastify: FastifyInstance) {
         user: {
           id: user.id,
           username: user.username,
+          name: user.name,
+          email: user.email,
           createdAt: user.createdAt,
         },
       });
@@ -112,7 +128,7 @@ async function authRoutes(fastify: FastifyInstance) {
       }
       const user = await getRepository(User).findOne({
         where: { id: payload.userId },
-        select: { id: true, username: true, createdAt: true },
+        select: { id: true, username: true, name: true, email: true, createdAt: true },
       });
       if (!user) {
         clearAuthCookies(reply);
@@ -120,7 +136,13 @@ async function authRoutes(fastify: FastifyInstance) {
       }
       setAuthCookies(reply, user.id);
       return reply.send({
-        user: { id: user.id, username: user.username, createdAt: user.createdAt },
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          email: user.email,
+          createdAt: user.createdAt,
+        },
       });
     }
   );

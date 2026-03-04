@@ -7,6 +7,8 @@ import { Alert, Button, Card, Input, PasswordInput } from '../components/ui';
 
 export default function Register() {
   const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +42,7 @@ export default function Register() {
     setError('');
     setSubmitting(true);
     try {
-      await register(username, password.trim());
+      await register(username, password.trim(), name.trim(), email.trim() || undefined);
       navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao cadastrar');
@@ -82,6 +84,15 @@ export default function Register() {
             </Alert>
           )}
           <Input
+            label="Nome"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            maxLength={50}
+            autoComplete="name"
+          />
+          <Input
             label="Nome de usuário"
             type="text"
             value={username}
@@ -90,6 +101,13 @@ export default function Register() {
             minLength={2}
             maxLength={32}
             autoComplete="username"
+          />
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
           />
           {usernameExists === true && (
             <p

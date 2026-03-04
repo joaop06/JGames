@@ -8,7 +8,8 @@ export default function Home() {
     <div>
       <h1 style={{ fontFamily: 'var(--font-display)', marginBottom: 'var(--space-4)' }}>JGames</h1>
       <p style={{ marginBottom: 'var(--space-6)', fontSize: 'var(--size-lg)' }}>
-        Olá, <strong>{user?.username}</strong>. Em breve você poderá jogar jogos multiplayer aqui.
+        Olá, <strong>{user?.name || user?.username}</strong>. Em breve você poderá jogar jogos
+        multiplayer aqui.
       </p>
 
       <section style={{ marginBottom: 'var(--space-6)' }}>

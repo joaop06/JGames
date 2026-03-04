@@ -9,25 +9,25 @@ export type WsMessage =
       winnerId: string | null;
       board: (null | 'X' | 'O')[];
       currentTurn: 'X' | 'O';
-      playerX?: { id: string; username: string };
-      playerO?: { id: string; username: string } | null;
+      playerX?: { id: string; username: string; name?: string | null };
+      playerO?: { id: string; username: string; name?: string | null } | null;
       moves?: Array<{ position: number; playerId: string }>;
     }
   | { type: 'error'; code: string; message: string }
   | {
       type: 'friend_invite';
       inviteId: string;
-      fromUser: { id: string; username: string };
+      fromUser: { id: string; username: string; name?: string | null };
     }
   | {
       type: 'friend_accepted';
-      friend: { id: string; username: string };
+      friend: { id: string; username: string; name?: string | null };
     }
   | { type: 'friend_removed'; friendId: string }
   | {
       type: 'game_invite';
       matchId: string;
-      fromUser?: { id: string; username: string };
+      fromUser?: { id: string; username: string; name?: string | null };
       gameType: string;
     }
   | { type: 'game_invite_opponent_busy'; opponentUsername: string }
@@ -41,7 +41,7 @@ export type WsMessage =
   | { type: 'rematch_pending'; expiresAt: number }
   | {
       type: 'rematch_requested';
-      fromUser?: { id: string; username: string };
+      fromUser?: { id: string; username: string; name?: string | null };
       expiresAt: number;
     }
   | { type: 'rematch_expired' }

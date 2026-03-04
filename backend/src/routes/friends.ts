@@ -23,6 +23,7 @@ async function friendRoutes(fastify: FastifyInstance) {
       friends: friends.map((u) => ({
         id: u.id,
         username: u.username,
+        name: u.name,
         createdAt: u.createdAt,
       })),
     });
@@ -37,7 +38,9 @@ async function friendRoutes(fastify: FastifyInstance) {
     return reply.send({
       invites: invites.map((i) => ({
         id: i.id,
-        fromUser: i.fromUser ? { id: i.fromUser.id, username: i.fromUser.username } : undefined,
+        fromUser: i.fromUser
+          ? { id: i.fromUser.id, username: i.fromUser.username, name: i.fromUser.name }
+          : undefined,
         createdAt: i.createdAt,
       })),
     });
@@ -128,7 +131,9 @@ async function friendRoutes(fastify: FastifyInstance) {
       sendToUser(toUserId, {
         type: 'friend_invite',
         inviteId: invite.id,
-        fromUser: fromUser ? { id: fromUser.id, username: fromUser.username } : undefined,
+        fromUser: fromUser
+          ? { id: fromUser.id, username: fromUser.username, name: fromUser.name }
+          : undefined,
       });
       const toUser = inviteWithUsers?.toUser;
       return reply.status(201).send({
@@ -171,11 +176,11 @@ async function friendRoutes(fastify: FastifyInstance) {
       });
       const friend = await getRepository(User).findOne({
         where: { id: invite.fromUserId },
-        select: { id: true, username: true },
+        select: { id: true, username: true, name: true },
       });
       const newFriendForInviter = await getRepository(User).findOne({
         where: { id: invite.toUserId },
-        select: { id: true, username: true },
+        select: { id: true, username: true, name: true },
       });
       if (newFriendForInviter) {
         sendToUser(invite.fromUserId, {

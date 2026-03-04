@@ -36,6 +36,8 @@ async function request<T>(
 export type UserResponse = {
   id: string;
   username: string;
+  name?: string | null;
+  email?: string | null;
   createdAt: string;
 };
 
@@ -47,10 +49,15 @@ export const api = {
     });
     return data!.user;
   },
-  async register(username: string, password: string): Promise<UserResponse> {
+  async register(
+    username: string,
+    password: string,
+    name: string,
+    email?: string
+  ): Promise<UserResponse> {
     const data = await request<{ user: UserResponse }>('/api/auth/register', {
       method: 'POST',
-      json: { username, password },
+      json: { username, password, name, email },
     });
     return data!.user;
   },
@@ -64,16 +71,20 @@ export const api = {
     const q = new URLSearchParams({ username });
     return request<{ exists: boolean }>(`/api/users/check-username?${q.toString()}`);
   },
-  async patchMe(body: { username?: string }): Promise<UserResponse> {
+  async patchMe(body: { username?: string; name?: string; email?: string }): Promise<UserResponse> {
     return request<UserResponse>('/api/users/me', { method: 'PATCH', json: body });
   },
   async getFriends(): Promise<{
-    friends: Array<{ id: string; username: string; createdAt: string }>;
+    friends: Array<{ id: string; username: string; name?: string | null; createdAt: string }>;
   }> {
     return request('/api/friends');
   },
   async getInvites(): Promise<{
-    invites: Array<{ id: string; fromUser: { id: string; username: string }; createdAt: string }>;
+    invites: Array<{
+      id: string;
+      fromUser: { id: string; username: string; name?: string | null };
+      createdAt: string;
+    }>;
   }> {
     return request('/api/friends/invites');
   },
@@ -99,11 +110,11 @@ export const api = {
       friendInvite: {
         id: string;
         status: string;
-        fromUser: { id: string; username: string };
+        fromUser: { id: string; username: string; name?: string | null };
       } | null;
       gameInvite: {
         matchId: string;
-        fromUser?: { id: string; username: string };
+        fromUser?: { id: string; username: string; name?: string | null };
         gameType: string;
       } | null;
     }>;
@@ -158,6 +169,7 @@ export const api = {
       rank: number;
       userId: string;
       username: string;
+      name?: string | null;
       wins: number;
       losses: number;
       draws: number;
@@ -177,8 +189,8 @@ export type TicTacToeMatchState = {
   gameType: string;
   status: string;
   winnerId: string | null;
-  playerX: { id: string; username: string } | undefined;
-  playerO: { id: string; username: string } | null;
+  playerX: { id: string; username: string; name?: string | null } | undefined;
+  playerO: { id: string; username: string; name?: string | null } | null;
   board: TicTacToeBoard;
   currentTurn: 'X' | 'O';
   moves: Array<{ position: number; playerId: string }>;

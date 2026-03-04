@@ -8,6 +8,12 @@ export class User {
   @Column({ type: 'varchar', unique: true })
   username!: string;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  name!: string | null;
+
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  email!: string | null;
+
   @Column({ name: 'password_hash', type: 'varchar' })
   passwordHash!: string;
 

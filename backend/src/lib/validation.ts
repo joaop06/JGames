@@ -20,9 +20,23 @@ const usernameNormalized = z
   );
 const passwordTrimmed = z.string().trim().min(8).max(128);
 
+const emailOptional = z
+  .string()
+  .trim()
+  .max(255)
+  .email('Email inválido')
+  .or(z.literal(''))
+  .transform((val) => (val === '' ? undefined : val));
+
 export const registerSchema = z.object({
   username: usernameNormalized,
   password: passwordTrimmed,
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Nome é obrigatório')
+    .max(50, 'Nome deve ter no máximo 50 caracteres'),
+  email: emailOptional.optional(),
 });
 
 export const loginSchema = z.object({
@@ -75,6 +89,17 @@ export const checkUsernameQuerySchema = z.object({
   username: z.string().transform((s) => normalizeUsernameRaw(s)),
 });
 
+export const updateProfileSchema = z.object({
+  username: usernameNormalized.optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Nome é obrigatório')
+    .max(50, 'Nome deve ter no máximo 50 caracteres')
+    .optional(),
+  email: emailOptional.optional(),
+});
+
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
 export type InviteFriendBody = z.infer<typeof inviteFriendSchema>;
@@ -82,3 +107,4 @@ export type CreateTicTacToeMatchBody = z.infer<typeof createTicTacToeMatchSchema
 export type ListMatchesQuery = z.infer<typeof listMatchesQuerySchema>;
 export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
 export type CheckUsernameQuery = z.infer<typeof checkUsernameQuerySchema>;
+export type UpdateProfileBody = z.infer<typeof updateProfileSchema>;

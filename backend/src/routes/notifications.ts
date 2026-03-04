@@ -39,7 +39,11 @@ async function notificationRoutes(fastify: FastifyInstance) {
               id: n.friendInvite.id,
               status: n.friendInvite.status,
               fromUser: n.friendInvite.fromUser
-                ? { id: n.friendInvite.fromUser.id, username: n.friendInvite.fromUser.username }
+                ? {
+                    id: n.friendInvite.fromUser.id,
+                    username: n.friendInvite.fromUser.username,
+                    name: n.friendInvite.fromUser.name,
+                  }
                 : undefined,
             }
           : null,
@@ -48,7 +52,11 @@ async function notificationRoutes(fastify: FastifyInstance) {
             ? {
                 matchId: n.matchId,
                 fromUser: n.match.playerX
-                  ? { id: n.match.playerX.id, username: n.match.playerX.username }
+                  ? {
+                      id: n.match.playerX.id,
+                      username: n.match.playerX.username,
+                      name: n.match.playerX.name,
+                    }
                   : undefined,
                 gameType: 'tic_tac_toe',
               }

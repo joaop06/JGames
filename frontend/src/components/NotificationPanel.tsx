@@ -12,11 +12,11 @@ type NotificationItem = {
   friendInvite: {
     id: string;
     status: string;
-    fromUser: { id: string; username: string };
+    fromUser: { id: string; username: string; name?: string | null };
   } | null;
   gameInvite: {
     matchId: string;
-    fromUser?: { id: string; username: string };
+    fromUser?: { id: string; username: string; name?: string | null };
     gameType: string;
   } | null;
 };
@@ -243,7 +243,7 @@ export default function NotificationPanel() {
                     {n.type === 'friend_invite' && inv && (
                       <>
                         <span style={{ color: 'var(--text-primary)' }}>
-                          {inv.fromUser.username}
+                          {inv.fromUser.name || inv.fromUser.username}
                           {inv.status === 'pending' ? ' enviou convite de amizade' : ' — Amigos'}
                         </span>
                         {inv.status === 'pending' && (
@@ -275,7 +275,8 @@ export default function NotificationPanel() {
                     {n.type === 'game_invite' && gameInv && (
                       <>
                         <span style={{ color: 'var(--text-primary)' }}>
-                          {gameInv.fromUser?.username ?? 'Alguém'} te desafiou para Jogo da Velha
+                          {(gameInv.fromUser?.name || gameInv.fromUser?.username || 'Alguém')}{' '}
+                          te desafiou para Jogo da Velha
                         </span>
                         <div
                           style={{

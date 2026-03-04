@@ -523,3 +523,51 @@ button:not(:disabled):active {
   flex-direction: column;
   gap: var(--space-3);
 }
+
+/* --- Página de Perfil --- */
+.page-title {
+  font-family: var(--font-display);
+  margin-bottom: var(--space-4);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  margin-bottom: var(--space-3);
+}
+
+.profile-layout {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.profile-main,
+.profile-friends,
+.profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'main friends'
+      'stats friends';
+    align-items: flex-start;
+  }
+
+  .profile-main {
+    grid-area: main;
+  }
+
+  .profile-friends {
+    grid-area: friends;
+  }
+
+  .profile-stats {
+    grid-area: stats;
+  }
+}

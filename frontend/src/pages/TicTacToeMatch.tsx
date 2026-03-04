@@ -73,7 +73,9 @@ export default function TicTacToeMatch() {
       } else if (msg.type === 'rematch_requested') {
         setRematchStatus('opponent_requested');
         setRematchExpiresAt(msg.expiresAt);
-        setRematchFromUsername(msg.fromUser?.username ?? 'Oponente');
+        setRematchFromUsername(
+          msg.fromUser?.name || msg.fromUser?.username || 'Oponente'
+        );
       } else if (msg.type === 'rematch_expired') {
         setRematchStatus('idle');
         setRematchExpiresAt(null);
@@ -122,8 +124,8 @@ export default function TicTacToeMatch() {
 
   const opponentName =
     myRole === 'X'
-      ? (state.playerO?.username ?? 'Aguardando...')
-      : (state.playerX?.username ?? 'Aguardando...');
+      ? state.playerO?.name || state.playerO?.username || 'Aguardando...'
+      : state.playerX?.name || state.playerX?.username || 'Aguardando...';
 
   const opponent =
     state.playerX && state.playerO && user
@@ -232,8 +234,8 @@ export default function TicTacToeMatch() {
   const isFinished = state.status === 'finished';
   const winnerName = state.winnerId
     ? state.playerX?.id === state.winnerId
-      ? state.playerX?.username
-      : state.playerO?.username
+      ? state.playerX?.name || state.playerX?.username
+      : state.playerO?.name || state.playerO?.username
     : null;
 
   const statusText =

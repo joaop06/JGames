@@ -78,7 +78,7 @@ export default function AppLayout() {
               <>
                 <NotificationPanel />
                 <span style={{ color: 'var(--text-muted)', fontSize: 'var(--size-sm)' }}>
-                  {user.username}
+                  {user.name || user.username}
                 </span>
                 <button
                   type="button"
@@ -155,7 +155,7 @@ export default function AppLayout() {
                 padding: 'var(--space-3)',
               }}
             >
-              {user.username}
+              {user.name || user.username}
             </span>
             <button
               type="button"

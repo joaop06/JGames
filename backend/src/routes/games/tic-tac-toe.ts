@@ -35,8 +35,8 @@ export type BuildMatchStateArg = {
   winnerId: string | null;
   playerXId: string;
   playerOId: string | null;
-  playerX?: { id: string; username: string };
-  playerO?: { id: string; username: string } | null;
+  playerX?: { id: string; username: string; name: string | null };
+  playerO?: { id: string; username: string; name: string | null } | null;
   moves: { position: number; playerId: string }[];
 };
 
@@ -48,7 +48,7 @@ export function buildMatchState(match: BuildMatchStateArg) {
       status: match.status,
       winnerId: match.winnerId,
       playerX: match.playerX
-        ? { id: match.playerX.id, username: match.playerX.username }
+        ? { id: match.playerX.id, username: match.playerX.username, name: match.playerX.name }
         : undefined,
       playerO: null,
       board: [null, null, null, null, null, null, null, null, null] as Board,
@@ -66,8 +66,12 @@ export function buildMatchState(match: BuildMatchStateArg) {
     gameType: GAME_TYPE,
     status: match.status,
     winnerId: match.winnerId,
-    playerX: match.playerX ? { id: match.playerX.id, username: match.playerX.username } : undefined,
-    playerO: match.playerO ? { id: match.playerO.id, username: match.playerO.username } : null,
+    playerX: match.playerX
+      ? { id: match.playerX.id, username: match.playerX.username, name: match.playerX.name }
+      : undefined,
+    playerO: match.playerO
+      ? { id: match.playerO.id, username: match.playerO.username, name: match.playerO.name }
+      : null,
     board,
     currentTurn: currentTurn(board),
     moves: match.moves.map((m) => ({ position: m.position, playerId: m.playerId })),
@@ -227,11 +231,11 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
           }
           const opponent = await getRepository(User).findOne({
             where: { id: opponentUserId },
-            select: { username: true },
+            select: { username: true, name: true },
           });
           sendToUser(request.userId, {
             type: 'game_invite_opponent_busy',
-            opponentUsername: opponent?.username ?? 'Oponente',
+            opponentUsername: opponent?.name ?? opponent?.username ?? 'Oponente',
           });
           return reply.status(200).send({ opponentBusy: true });
         }
@@ -263,7 +267,11 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
           type: 'game_invite',
           matchId: match.id,
           fromUser: matchWithRelations.playerX
-            ? { id: matchWithRelations.playerX.id, username: matchWithRelations.playerX.username }
+            ? {
+                id: matchWithRelations.playerX.id,
+                username: matchWithRelations.playerX.username,
+                name: matchWithRelations.playerX.name,
+              }
             : undefined,
           gameType: 'tic_tac_toe',
         });
@@ -307,8 +315,12 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         id: m.id,
         status: m.status,
         winnerId: m.winnerId,
-        playerX: m.playerX ? { id: m.playerX.id, username: m.playerX.username } : undefined,
-        playerO: m.playerO ? { id: m.playerO.id, username: m.playerO.username } : null,
+        playerX: m.playerX
+          ? { id: m.playerX.id, username: m.playerX.username, name: m.playerX.name }
+          : undefined,
+        playerO: m.playerO
+          ? { id: m.playerO.id, username: m.playerO.username, name: m.playerO.name }
+          : null,
         createdAt: m.createdAt,
         finishedAt: m.finishedAt,
       }));
@@ -444,6 +456,7 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
         rank: i + 1,
         userId: r.userId,
         username: r.user?.username ?? '',
+        name: r.user?.name ?? null,
         wins: r.wins,
         losses: r.losses,
         draws: r.draws,
