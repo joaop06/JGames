@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUsernameCheck } from '../hooks/useUsernameCheck';
 import { normalizeUsername } from '../utils/username';
-import { Alert, Button, Card, Input } from '../components/ui';
+import { Alert, Button, Card, Input, PasswordInput } from '../components/ui';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -103,9 +103,8 @@ export default function Register() {
               Nome de usuário já está em uso.
             </p>
           )}
-          <Input
+          <PasswordInput
             label="Senha"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
