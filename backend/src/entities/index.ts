@@ -6,3 +6,8 @@ export { Match } from './Match.js';
 export { Move } from './Move.js';
 export { UserGameStats } from './UserGameStats.js';
 export { FriendGameRecord } from './FriendGameRecord.js';
+export { HangmanWord } from './HangmanWord.js';
+export { HangmanGame } from './HangmanGame.js';
+export { HangmanUserStats } from './HangmanUserStats.js';
+export { UserAchievement } from './UserAchievement.js';
+export { HangmanDailyWord } from './HangmanDailyWord.js';

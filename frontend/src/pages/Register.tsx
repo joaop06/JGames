@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUsernameCheck } from '../hooks/useUsernameCheck';
@@ -16,6 +16,12 @@ export default function Register() {
   const navigate = useNavigate();
   const { exists: usernameExists } = useUsernameCheck(username);
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [loading, user, navigate]);
+
   if (loading) {
     return (
       <div
@@ -30,11 +36,6 @@ export default function Register() {
         <p style={{ color: 'var(--text-muted)' }}>Verificando sessão...</p>
       </div>
     );
-  }
-
-  if (user) {
-    navigate('/', { replace: true });
-    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {

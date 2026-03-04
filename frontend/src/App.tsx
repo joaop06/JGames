@@ -9,6 +9,9 @@ import Profile from './pages/Profile';
 import Games from './pages/Games';
 import TicTacToeLobby from './pages/TicTacToeLobby';
 import TicTacToeMatch from './pages/TicTacToeMatch';
+import HangmanLobby from './pages/HangmanLobby';
+import HangmanGamePage from './pages/HangmanGame';
+import HangmanStatsPage from './pages/HangmanStats';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -37,6 +40,9 @@ export default function App() {
           <Route path="games" element={<Games />} />
           <Route path="games/tic-tac-toe" element={<TicTacToeLobby />} />
           <Route path="games/tic-tac-toe/match/:matchId" element={<TicTacToeMatch />} />
+          <Route path="games/hangman" element={<HangmanLobby />} />
+          <Route path="games/hangman/play/:gameId" element={<HangmanGamePage />} />
+          <Route path="games/hangman/stats" element={<HangmanStatsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

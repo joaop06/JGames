@@ -9,6 +9,11 @@ import {
   Move,
   UserGameStats,
   FriendGameRecord,
+  HangmanWord,
+  HangmanGame,
+  HangmanUserStats,
+  UserAchievement,
+  HangmanDailyWord,
 } from '../entities/index.js';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -28,6 +33,11 @@ export const AppDataSource = new DataSource({
     Move,
     UserGameStats,
     FriendGameRecord,
+    HangmanWord,
+    HangmanGame,
+    HangmanUserStats,
+    UserAchievement,
+    HangmanDailyWord,
   ],
 });
 

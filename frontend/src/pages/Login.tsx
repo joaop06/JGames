@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Button, Card, Input, PasswordInput } from '../components/ui';
@@ -10,6 +10,12 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const { login, user, loading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   if (loading) {
     return (
@@ -25,11 +31,6 @@ export default function Login() {
         <p style={{ color: 'var(--text-muted)' }}>Verificando sessão...</p>
       </div>
     );
-  }
-
-  if (user) {
-    navigate('/', { replace: true });
-    return null;
   }
 
   async function handleSubmit(e: React.FormEvent) {

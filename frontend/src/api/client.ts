@@ -181,6 +181,56 @@ export const api = {
   async getTicTacToeOnlineCount(): Promise<{ count: number }> {
     return request('/api/games/tic-tac-toe/online');
   },
+
+  // --- Hangman / Jogo da Forca ---
+
+  async startHangmanGame(body: {
+    categoryId?: string;
+    difficulty: HangmanDifficulty;
+    mode?: HangmanMode;
+    timerSeconds?: number | null;
+  }): Promise<{ game: HangmanGameState; categories: HangmanCategoryMeta[] }> {
+    return request('/api/games/hangman/start', {
+      method: 'POST',
+      json: body,
+    });
+  },
+
+  async guessHangman(gameId: string, letter: string): Promise<HangmanGuessResponse> {
+    return request(`/api/games/hangman/${gameId}/guess`, {
+      method: 'POST',
+      json: { letter },
+    });
+  },
+
+  async requestHangmanHint(gameId: string): Promise<HangmanHintResponse> {
+    return request(`/api/games/hangman/${gameId}/hint`, {
+      method: 'POST',
+    });
+  },
+
+  async getHangmanGame(gameId: string): Promise<HangmanGameState> {
+    return request(`/api/games/hangman/${gameId}`);
+  },
+
+  async getHangmanStats(userId: string): Promise<HangmanStatsResponse> {
+    return request(`/api/games/hangman/stats/${userId}`);
+  },
+
+  async getHangmanLeaderboard(
+    period: HangmanLeaderboardPeriod,
+    limit?: number
+  ): Promise<{ leaderboard: HangmanLeaderboardEntry[] }> {
+    const q = new URLSearchParams({ period });
+    if (limit != null) q.set('limit', String(limit));
+    return request(`/api/games/hangman/leaderboard?${q.toString()}`);
+  },
+
+  async getHangmanAchievements(
+    userId: string
+  ): Promise<{ achievements: HangmanAchievement[] }> {
+    return request(`/api/games/hangman/achievements/${userId}`);
+  },
 };
 
 export type TicTacToeBoard = (null | 'X' | 'O')[];
@@ -203,4 +253,67 @@ export type TicTacToeMatchListItem = {
   playerO: { id: string; username: string } | null;
   createdAt: string;
   finishedAt: string | null;
+};
+
+// --- Tipos do Jogo da Forca ---
+
+export type HangmanMode = 'single' | 'multiplayer' | 'daily';
+export type HangmanDifficulty = 'easy' | 'medium' | 'hard';
+export type HangmanStatus = 'playing' | 'won' | 'lost';
+
+export type HangmanCategoryMeta = {
+  id: string;
+  name: string;
+};
+
+export type HangmanGameState = {
+  gameId: string;
+  mode: HangmanMode;
+  category: HangmanCategoryMeta | null;
+  difficulty: HangmanDifficulty;
+  maskedWord: string;
+  maxErrors: number;
+  errorsRemaining: number;
+  guessedLetters: string[];
+  hintsAvailable: number;
+  hintsUsed: number;
+  status: HangmanStatus;
+  timerSeconds: number | null;
+};
+
+export type HangmanGuessResponse = HangmanGameState & {
+  letter: string;
+  correct: boolean;
+  revealedWord?: string;
+  score?: number;
+};
+
+export type HangmanHintResponse = HangmanGameState & {
+  revealedLetter: string;
+  positions: number[];
+  scorePenalty: number;
+};
+
+export type HangmanStatsResponse = {
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  currentStreak: number;
+  bestStreak: number;
+  averageScore: number;
+};
+
+export type HangmanLeaderboardPeriod = 'daily' | 'weekly' | 'alltime';
+
+export type HangmanLeaderboardEntry = {
+  rank: number;
+  userId: string;
+  username: string;
+  avatar: string | null;
+  score: number;
+};
+
+export type HangmanAchievement = {
+  code: string;
+  unlockedAt: string;
 };

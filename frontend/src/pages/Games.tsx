@@ -70,6 +70,58 @@ export default function Games() {
             <span style={{ fontSize: 'var(--size-sm)' }}>Jogo da Velha</span>
           </Card>
         </Link>
+
+        <Link to="/games/hangman" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Card
+            style={{
+              textAlign: 'center',
+              transition: 'box-shadow var(--transition-normal)',
+              height: '100%',
+            }}
+            onMouseOver={(e: React.MouseEvent<HTMLDivElement>) => {
+              e.currentTarget.style.boxShadow = 'var(--shadow-card), 0 0 16px var(--glow-purple)';
+            }}
+            onMouseOut={(e: React.MouseEvent<HTMLDivElement>) => {
+              e.currentTarget.style.boxShadow = 'var(--shadow-card)';
+            }}
+          >
+            <div
+              style={{
+                aspectRatio: '1',
+                background: 'var(--bg-elevated)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'var(--space-3)',
+              }}
+              aria-hidden
+            >
+              <svg
+                viewBox="0 0 100 100"
+                style={{ width: '100%', height: '100%', display: 'block' }}
+                fill="none"
+              >
+                <g stroke="var(--border)" strokeWidth="3">
+                  <line x1="20" y1="90" x2="80" y2="90" />
+                  <line x1="30" y1="90" x2="30" y2="15" />
+                  <line x1="30" y1="15" x2="65" y2="15" />
+                  <line x1="65" y1="15" x2="65" y2="25" />
+                </g>
+                <g stroke="var(--accent-pink)" strokeWidth="3">
+                  <circle cx="65" cy="32" r="7" />
+                  <line x1="65" y1="39" x2="65" y2="55" />
+                  <line x1="65" y1="45" x2="57" y2="50" />
+                  <line x1="65" y1="45" x2="73" y2="50" />
+                  <line x1="65" y1="55" x2="58" y2="68" />
+                  <line x1="65" y1="55" x2="72" y2="68" />
+                </g>
+              </svg>
+            </div>
+            <span style={{ fontSize: 'var(--size-sm)' }}>Jogo da Forca</span>
+          </Card>
+        </Link>
       </div>
     </div>
   );

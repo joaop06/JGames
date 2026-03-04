@@ -91,7 +91,7 @@ export default function Profile() {
                 </Alert>
               )}
               {success && (
-                <Alert variant="success" style={{ marginBottom: 'var(--space-3)' }}>
+                <Alert variant="info" style={{ marginBottom: 'var(--space-3)' }}>
                   {success}
                 </Alert>
               )}

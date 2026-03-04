@@ -524,6 +524,386 @@ button:not(:disabled):active {
   gap: var(--space-3);
 }
 
+/* --- Hangman (Jogo da Forca) --- */
+
+.hangman-lobby {
+  max-width: 100%;
+}
+
+.hangman-lobby__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
+  background: var(--gradient-hero);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.hangman-lobby__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 30%, var(--accent-pink), transparent),
+    radial-gradient(circle at 70% 70%, var(--accent-purple), transparent);
+  box-shadow: var(--shadow-glow);
+  font-size: 2rem;
+}
+
+.hangman-lobby__hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--size-2xl);
+}
+
+.hangman-lobby__hero p {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 420px;
+}
+
+.hangman-lobby__grid {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .hangman-lobby__grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+}
+
+.hangman-lobby__section-title {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  margin-bottom: var(--space-4);
+}
+
+.hangman-lobby__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.hangman-lobby__field label {
+  font-size: var(--size-sm);
+  color: var(--text-muted);
+}
+
+.hangman-lobby__field select,
+.hangman-lobby__field input[type='number'] {
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.hangman-lobby__difficulty {
+  display: grid;
+  gap: var(--space-2);
+}
+
+@media (min-width: 600px) {
+  .hangman-lobby__difficulty {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.hangman-lobby__difficulty-btn {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: var(--space-3);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.hangman-lobby__difficulty-btn.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.hangman-lobby__difficulty-label {
+  font-weight: var(--weight-bold);
+}
+
+.hangman-lobby__difficulty-desc {
+  font-size: var(--size-xs);
+  color: var(--text-muted);
+}
+
+.hangman-lobby__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--size-sm);
+  color: var(--text-muted);
+}
+
+.hangman-lobby__howto {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--size-sm);
+}
+
+.hangman-lobby__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.hangman-lobby__error {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--danger);
+  border-radius: var(--radius-md);
+  font-size: var(--size-sm);
+}
+
+.hangman-game {
+  max-width: 100%;
+}
+
+.hangman-game__hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.hangman-game__hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--size-xl);
+}
+
+.hangman-game__layout {
+  display: grid;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+@media (min-width: 900px) {
+  .hangman-game__layout {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+  }
+}
+
+.hangman-game__figure-card,
+.hangman-game__word-card,
+.hangman-game__info-card,
+.hangman-game__result-card {
+  height: 100%;
+}
+
+.hangman-figure {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hangman-word {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--size-xl);
+  letter-spacing: 0.08em;
+}
+
+.hangman-word__slot {
+  min-width: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: var(--space-1);
+}
+
+.hangman-word__slot--revealed {
+  color: var(--accent);
+}
+
+.hangman-word__slot--missed {
+  color: #f87171;
+}
+
+.hangman-keyboard {
+  margin-top: var(--space-4);
+}
+
+.hangman-keyboard__row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.hangman-keyboard__key {
+  min-width: 32px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.hangman-keyboard__key--used {
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.hangman-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--size-sm);
+}
+
+.hangman-info__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.hangman-info__label {
+  color: var(--text-muted);
+}
+
+.hangman-info__value {
+  font-weight: var(--weight-bold);
+}
+
+.hangman-info__hint-btn {
+  margin-top: var(--space-3);
+}
+
+.hangman-game__error,
+.hangman-stats__error {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  background: var(--danger);
+  border-radius: var(--radius-md);
+  font-size: var(--size-sm);
+}
+
+.hangman-game__loading,
+.hangman-stats__loading {
+  padding: var(--space-4);
+  font-size: var(--size-sm);
+  color: var(--text-muted);
+}
+
+.hangman-game__result-card {
+  margin-top: var(--space-4);
+  text-align: center;
+}
+
+.hangman-game__result-actions {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.hangman-stats__hero h1 {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+}
+
+.hangman-stats__grid {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .hangman-stats__grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+}
+
+.hangman-stats__section-title {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  margin-bottom: var(--space-3);
+}
+
+.hangman-stats__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.hangman-stats__label {
+  display: block;
+  font-size: var(--size-xs);
+  color: var(--text-muted);
+}
+
+.hangman-stats__value {
+  font-size: var(--size-base);
+  font-weight: var(--weight-bold);
+}
+
+.hangman-stats__muted {
+  font-size: var(--size-sm);
+  color: var(--text-muted);
+}
+
+.hangman-stats__achievements {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--size-sm);
+}
+
+.hangman-stats__achievement-code {
+  font-family: var(--font-display);
+}
+
+.hangman-stats__leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.hangman-stats__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hangman-stats__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--size-sm);
+}
+
+.hangman-stats__table th,
+.hangman-stats__table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
 /* --- Página de Perfil --- */
 .page-title {
   font-family: var(--font-display);

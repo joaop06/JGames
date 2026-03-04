@@ -9,6 +9,7 @@ import userRoutes from './routes/users.js';
 import friendRoutes from './routes/friends.js';
 import notificationRoutes from './routes/notifications.js';
 import ticTacToeRoutes from './routes/games/tic-tac-toe.js';
+import hangmanRoutes from './routes/games/hangman.js';
 import { registerWebSocket } from './ws/handler.js';
 import { buildRequestErrorContext } from './lib/logger.js';
 
@@ -102,6 +103,7 @@ await app.register(userRoutes);
 await app.register(friendRoutes);
 await app.register(notificationRoutes);
 await app.register(ticTacToeRoutes);
+await app.register(hangmanRoutes);
 await registerWebSocket(app);
 
 app.get('/health', async () => ({ status: 'ok' }));

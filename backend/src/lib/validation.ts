@@ -108,3 +108,77 @@ export type ListMatchesQuery = z.infer<typeof listMatchesQuerySchema>;
 export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
 export type CheckUsernameQuery = z.infer<typeof checkUsernameQuerySchema>;
 export type UpdateProfileBody = z.infer<typeof updateProfileSchema>;
+
+// --- Hangman / Jogo da Forca ---
+
+export const hangmanStartSchema = z.object({
+  categoryId: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .optional(),
+  difficulty: z.enum(['easy', 'medium', 'hard'], {
+    required_error: 'Dificuldade é obrigatória',
+    invalid_type_error: 'Dificuldade inválida',
+  }),
+  mode: z.enum(['single', 'daily', 'multiplayer']).default('single'),
+  timerSeconds: z
+    .preprocess(
+      (v) => (v === null || v === '' ? undefined : v),
+      z
+        .coerce
+        .number()
+        .int()
+        .min(10, 'Timer deve ter pelo menos 10 segundos')
+        .max(600, 'Timer deve ter no máximo 600 segundos')
+    )
+    .optional(),
+  multiplayerConfig: z
+    .object({
+      opponentUserId: z.string().uuid(),
+      customWord: z
+        .string()
+        .trim()
+        .min(3)
+        .max(32)
+        .optional(),
+      customHint: z
+        .string()
+        .trim()
+        .max(120)
+        .optional(),
+    })
+    .optional(),
+});
+
+export const hangmanGuessSchema = z.object({
+  letter: z
+    .string()
+    .trim()
+    .length(1, 'Informe apenas uma letra')
+    .regex(/^[a-zA-ZÀ-ÿ]$/, 'Informe uma letra de A-Z'),
+});
+
+export const hangmanHintSchema = z.object({
+  // reservado para futuras opções
+});
+
+export const hangmanStatsParamsSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+export const hangmanLeaderboardQuerySchema = z.object({
+  period: z.enum(['daily', 'weekly', 'alltime']).optional().default('alltime'),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(10),
+});
+
+export const hangmanAchievementsParamsSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+export type HangmanStartBody = z.infer<typeof hangmanStartSchema>;
+export type HangmanGuessBody = z.infer<typeof hangmanGuessSchema>;
+export type HangmanStatsParams = z.infer<typeof hangmanStatsParamsSchema>;
+export type HangmanLeaderboardQuery = z.infer<typeof hangmanLeaderboardQuerySchema>;
+export type HangmanAchievementsParams = z.infer<typeof hangmanAchievementsParamsSchema>;
