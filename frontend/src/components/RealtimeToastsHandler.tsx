@@ -40,12 +40,10 @@ export default function RealtimeToastsHandler() {
       }
 
       if (msg.type === 'game_invite') {
-        const currentMatchId = getMatchIdFromPath(pathname);
-        if (inMatch && currentMatchId === msg.matchId) {
-          addUnreadNotification();
-          return;
-        }
         addUnreadNotification();
+        const currentMatchId = getMatchIdFromPath(pathname);
+        if (inMatch && currentMatchId === msg.matchId) return;
+        if (inMatch) return;
         const username = msg.fromUser?.username ?? 'Alguém';
         const matchId = msg.matchId;
         showToast({

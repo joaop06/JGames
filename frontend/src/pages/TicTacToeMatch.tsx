@@ -24,11 +24,15 @@ export default function TicTacToeMatch() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { connection, subscribe, isConnected, showToast } = useRealtime();
+  const { connection, subscribe, isConnected } = useRealtime();
   const [state, setState] = useState<TicTacToeMatchState>(emptyState);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(true);
-  const [rematchLoading, setRematchLoading] = useState(false);
+  const [rematchStatus, setRematchStatus] = useState<
+    'idle' | 'waiting_opponent' | 'opponent_requested'
+  >('idle');
+  const [rematchExpiresAt, setRematchExpiresAt] = useState<number | null>(null);
+  const [rematchFromUsername, setRematchFromUsername] = useState<string | null>(null);
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [addFriendStatus, setAddFriendStatus] = useState<
     'idle' | 'loading' | 'sent' | 'already_friends'
@@ -62,6 +66,24 @@ export default function TicTacToeMatch() {
       } else if (msg.type === 'error') {
         setError(getUserMessage(msg.message ?? msg.code ?? ''));
         setConnecting(false);
+      } else if (msg.type === 'rematch_pending') {
+        setRematchStatus('waiting_opponent');
+        setRematchExpiresAt(msg.expiresAt);
+        setRematchFromUsername(null);
+      } else if (msg.type === 'rematch_requested') {
+        setRematchStatus('opponent_requested');
+        setRematchExpiresAt(msg.expiresAt);
+        setRematchFromUsername(msg.fromUser?.username ?? 'Oponente');
+      } else if (msg.type === 'rematch_expired') {
+        setRematchStatus('idle');
+        setRematchExpiresAt(null);
+        setRematchFromUsername(null);
+        navigate('/games/tic-tac-toe');
+      } else if (msg.type === 'rematch_ready') {
+        setRematchStatus('idle');
+        setRematchExpiresAt(null);
+        setRematchFromUsername(null);
+        navigate(`/games/tic-tac-toe/match/${msg.matchId}`);
       }
     },
     [navigate]
@@ -73,8 +95,19 @@ export default function TicTacToeMatch() {
     return () => {
       unsub();
       connection.send({ type: 'leave_match' });
+      setRematchStatus('idle');
+      setRematchExpiresAt(null);
+      setRematchFromUsername(null);
     };
   }, [matchId, subscribe, handleMessage, connection]);
+
+  useEffect(() => {
+    if (state.status !== 'finished') {
+      setRematchStatus('idle');
+      setRematchExpiresAt(null);
+      setRematchFromUsername(null);
+    }
+  }, [state.status]);
 
   useEffect(() => {
     if (matchId && isConnected) {
@@ -129,35 +162,35 @@ export default function TicTacToeMatch() {
     }
   };
 
-  const handleNewMatch = async () => {
-    if (!opponent?.id) {
-      navigate('/games/tic-tac-toe');
-      return;
-    }
-    setRematchLoading(true);
+  const handleJogarNovamente = () => {
+    if (!matchId) return;
     setError(null);
-    try {
-      const res = await api.createTicTacToeMatch(opponent.id);
-      if (res.opponentBusy) {
-        showToast({
-          type: 'game_invite_opponent_busy',
-          username: opponent.username ?? 'Oponente',
-        });
-        return;
-      }
-      if (res.match) {
-        navigate(`/games/tic-tac-toe/match/${res.match.id}`);
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? getUserMessage(err.message)
-          : 'Não foi possível iniciar nova partida.'
-      );
-    } finally {
-      setRematchLoading(false);
+    if (rematchStatus === 'idle') {
+      connection.send({ type: 'rematch_request', matchId });
+    } else if (rematchStatus === 'opponent_requested') {
+      connection.send({ type: 'rematch_accept', matchId });
     }
   };
+
+  const [rematchCountdown, setRematchCountdown] = useState<number | null>(null);
+  useEffect(() => {
+    if (rematchExpiresAt == null || rematchStatus === 'idle') {
+      setRematchCountdown(null);
+      return;
+    }
+    const tick = () => {
+      const secs = Math.max(0, Math.ceil((rematchExpiresAt - Date.now()) / 1000));
+      setRematchCountdown(secs);
+      if (secs <= 0) {
+        setRematchExpiresAt(null);
+        setRematchStatus('idle');
+        navigate('/games/tic-tac-toe');
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [rematchExpiresAt, rematchStatus, navigate]);
 
   if (!matchId) {
     return (
@@ -266,13 +299,33 @@ export default function TicTacToeMatch() {
           >
             Partida encerrada
           </h2>
+          {(rematchStatus === 'waiting_opponent' || rematchStatus === 'opponent_requested') && (
+            <p
+              style={{
+                color: 'var(--text-muted)',
+                fontSize: 'var(--size-sm)',
+                margin: '0 0 var(--space-3)',
+              }}
+            >
+              {rematchStatus === 'waiting_opponent'
+                ? 'Aguardando confirmação do oponente...'
+                : rematchFromUsername
+                  ? `${rematchFromUsername} quer jogar novamente.`
+                  : 'Oponente quer jogar novamente.'}
+              {rematchCountdown != null && rematchCountdown >= 0 && (
+                <span style={{ display: 'block', marginTop: 'var(--space-2)' }}>
+                  Redirecionando ao lobby em {rematchCountdown}s...
+                </span>
+              )}
+            </p>
+          )}
           <div className="tic-tac-toe-match__actions">
-            <Button className="lobby-btn" onClick={handleNewMatch} disabled={rematchLoading}>
-              {rematchLoading
-                ? 'Criando...'
-                : opponent
-                  ? `Nova partida (contra ${opponent.username})`
-                  : 'Nova partida'}
+            <Button
+              className="lobby-btn"
+              onClick={handleJogarNovamente}
+              disabled={rematchStatus === 'waiting_opponent'}
+            >
+              Jogar novamente
             </Button>
             {opponent && !friendIds.has(opponent.id) && (
               <>

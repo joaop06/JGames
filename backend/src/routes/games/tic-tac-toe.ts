@@ -108,6 +108,56 @@ async function ticTacToeRoutes(fastify: FastifyInstance) {
           return reply.status(403).send({ error: 'Can only challenge friends' });
         }
         const matchRepo = getRepository(Match);
+        const notifRepo = getRepository(Notification);
+
+        // Priorizar partida em que o oponente está à espera e que convidou o usuário atual (rematch)
+        const rematchInvite = await notifRepo.findOne({
+          where: {
+            userId: request.userId,
+            type: 'game_invite',
+          },
+          order: { createdAt: 'DESC' },
+        });
+        if (rematchInvite?.matchId) {
+          const rematchMatch = await matchRepo.findOne({
+            where: [
+              {
+                id: rematchInvite.matchId,
+                gameType: GAME_TYPE,
+                status: 'waiting',
+                playerXId: opponentUserId,
+              },
+              {
+                id: rematchInvite.matchId,
+                gameType: GAME_TYPE,
+                status: 'waiting',
+                playerOId: opponentUserId,
+              },
+            ],
+          });
+          if (rematchMatch) {
+            await matchRepo.update(
+              { id: rematchMatch.id },
+              { playerOId: request.userId, status: 'in_progress' }
+            );
+            const updated = await matchRepo.findOne({
+              where: { id: rematchMatch.id },
+              relations: { playerX: true, playerO: true, moves: true },
+            });
+            if (!updated) throw new Error('Match not found');
+            await notifRepo.delete({ matchId: rematchMatch.id, type: 'game_invite' });
+            const state = buildMatchState({
+              ...updated,
+              moves: (updated.moves ?? []).map((m: Move) => ({
+                position: m.position,
+                playerId: m.playerId,
+              })),
+            } as BuildMatchStateArg);
+            broadcastMatch(rematchMatch.id, { type: 'match_state', ...state });
+            return reply.status(201).send({ match: state });
+          }
+        }
+
         const opponentInMatch = await matchRepo.findOne({
           where: [
             {

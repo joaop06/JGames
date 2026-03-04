@@ -37,6 +37,18 @@ export type WsMessage =
       matchId: string;
       gameType: string;
       match: import('./client').TicTacToeMatchState;
+    }
+  | { type: 'rematch_pending'; expiresAt: number }
+  | {
+      type: 'rematch_requested';
+      fromUser?: { id: string; username: string };
+      expiresAt: number;
+    }
+  | { type: 'rematch_expired' }
+  | {
+      type: 'rematch_ready';
+      matchId: string;
+      match: import('./client').TicTacToeMatchState;
     };
 
 function getWsBaseUrl(): string {

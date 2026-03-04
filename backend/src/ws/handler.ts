@@ -5,6 +5,7 @@ import { In } from 'typeorm';
 import { AppDataSource, getRepository } from '../lib/db.js';
 import { Match } from '../entities/Match.js';
 import { Move } from '../entities/Move.js';
+import { User } from '../entities/User.js';
 import { UserGameStats } from '../entities/UserGameStats.js';
 import { FriendGameRecord } from '../entities/FriendGameRecord.js';
 import { verifyWsToken } from '../lib/auth.js';
@@ -31,6 +32,15 @@ type QueueEntry = { userId: string; joinedAt: number };
 const matchmakingQueue = new Map<string, QueueEntry[]>();
 
 const lobbyPresence = new Map<string, Set<string>>();
+
+const REMATCH_TIMEOUT_MS = 5000;
+type RematchState = {
+  requestedBy: string;
+  opponentId: string;
+  expiresAt: number;
+  timeoutHandle: ReturnType<typeof setTimeout>;
+};
+const rematchStateByMatchId = new Map<string, RematchState>();
 
 function removeFromQueue(gameType: string, userId: string) {
   const q = matchmakingQueue.get(gameType);
@@ -478,6 +488,209 @@ export async function registerWebSocket(server: FastifyInstance) {
             await endMatchIfActiveAndNotifyOpponent(currentMatchId, userId, socket);
             currentMatchId = null;
           }
+          return;
+        }
+
+        if (data.type === 'rematch_request') {
+          const matchId = data.matchId ?? currentMatchId;
+          if (!matchId || typeof matchId !== 'string') {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              currentMatchId,
+              data.type,
+              data,
+              'invalid_payload',
+              'matchId required'
+            );
+            return;
+          }
+          const match = await getRepository(Match).findOne({
+            where: { id: matchId, gameType: TIC_TAC_TOE_GAME_TYPE },
+            relations: { playerX: true, playerO: true },
+          });
+          if (!match) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'not_found',
+              'Match not found'
+            );
+            return;
+          }
+          if (match.status !== 'finished') {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_state',
+              'Match must be finished to request rematch'
+            );
+            return;
+          }
+          const isPlayer = match.playerXId === userId || match.playerOId === userId;
+          if (!isPlayer) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'forbidden',
+              'Not a player in this match'
+            );
+            return;
+          }
+          if (rematchStateByMatchId.has(matchId)) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_state',
+              'Rematch already requested for this match'
+            );
+            return;
+          }
+          const opponentId = match.playerXId === userId ? match.playerOId : match.playerXId;
+          if (!opponentId) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_state',
+              'No opponent in match'
+            );
+            return;
+          }
+          const expiresAt = Date.now() + REMATCH_TIMEOUT_MS;
+          const timeoutHandle = setTimeout(() => {
+            const state = rematchStateByMatchId.get(matchId);
+            if (!state) return;
+            rematchStateByMatchId.delete(matchId);
+            sendToUser(state.requestedBy, { type: 'rematch_expired' });
+            sendToUser(state.opponentId, { type: 'rematch_expired' });
+          }, REMATCH_TIMEOUT_MS);
+          rematchStateByMatchId.set(matchId, {
+            requestedBy: userId,
+            opponentId,
+            expiresAt,
+            timeoutHandle,
+          });
+          const requestUser = await getRepository(User).findOne({
+            where: { id: userId },
+            select: { id: true, username: true },
+          });
+          sendToUser(userId, {
+            type: 'rematch_pending',
+            expiresAt,
+          });
+          sendToUser(opponentId, {
+            type: 'rematch_requested',
+            fromUser: requestUser
+              ? { id: requestUser.id, username: requestUser.username }
+              : undefined,
+            expiresAt,
+          });
+          return;
+        }
+
+        if (data.type === 'rematch_accept') {
+          const matchId = data.matchId ?? currentMatchId;
+          if (!matchId || typeof matchId !== 'string') {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              currentMatchId,
+              data.type,
+              data,
+              'invalid_payload',
+              'matchId required'
+            );
+            return;
+          }
+          const state = rematchStateByMatchId.get(matchId);
+          if (!state) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'invalid_state',
+              'No rematch pending for this match'
+            );
+            return;
+          }
+          if (state.opponentId !== userId) {
+            sendWsError(
+              server,
+              socket,
+              userId,
+              matchId,
+              data.type,
+              data,
+              'forbidden',
+              'Only the opponent can accept the rematch'
+            );
+            return;
+          }
+          if (Date.now() >= state.expiresAt) {
+            rematchStateByMatchId.delete(matchId);
+            clearTimeout(state.timeoutHandle);
+            sendToUser(userId, { type: 'rematch_expired' });
+            sendToUser(state.requestedBy, { type: 'rematch_expired' });
+            return;
+          }
+          clearTimeout(state.timeoutHandle);
+          rematchStateByMatchId.delete(matchId);
+          const matchRepo = getRepository(Match);
+          const newMatch = matchRepo.create({
+            id: randomUUID(),
+            gameType: TIC_TAC_TOE_GAME_TYPE,
+            playerXId: state.requestedBy,
+            playerOId: userId,
+            status: 'in_progress',
+          });
+          await matchRepo.save(newMatch);
+          const matchWithRelations = await matchRepo.findOne({
+            where: { id: newMatch.id },
+            relations: { playerX: true, playerO: true, moves: true },
+          });
+          if (!matchWithRelations) throw new Error('Match not found');
+          const newState = buildMatchState({
+            ...matchWithRelations,
+            moves: (matchWithRelations.moves ?? []).map((m: Move) => ({
+              position: m.position,
+              playerId: m.playerId,
+            })),
+          } as BuildMatchStateArg);
+          sendToUser(state.requestedBy, {
+            type: 'rematch_ready',
+            matchId: newMatch.id,
+            match: newState,
+          });
+          sendToUser(userId, {
+            type: 'rematch_ready',
+            matchId: newMatch.id,
+            match: newState,
+          });
           return;
         }
 
